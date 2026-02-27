@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>📦 俄罗斯方块 · 移动响应式</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #1a1e2f;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 10px;
+            touch-action: manipulation;
+        }
+        .game-wrapper {
+            background: #0b0d17;
+            border-radius: 36px;
+            padding: 20px 18px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6), inset 0 0 0 2px #3f4b7e;
+            max-width: 500px;
+            width: 100%;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #121628;
+            border-radius: 60px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            color: #b7c9e2;
+            border: 1px solid #344067;
+            box-shadow: inset 0 3px 6px #00000055;
+        }
+        .score-box {
+            background: #020617;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-weight: 700;
+            font-size: 1.7rem;
+            letter-spacing: 2px;
+            color: #f0db4f;
+            text-shadow: 0 0 10px #ffb347;
+            box-shadow: inset 0 -2px 0 #5f6ea3;
+        }
+        .next-label {
+            font-size: 1rem;
+            font-weight: 500;
+            background: #20263f;
+            padding: 6px 16px;
+            border-radius: 30px;
+            border: 1px solid #4d5d92;
+        }
+        .play-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+        }
+        /* 主游戏板 */
+        .board-section {
+            flex: 2 1 240px;
+            display: flex;
+            justify-content: center;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            background: #0f1322;
+            border: 4px solid #313b64;
+            border-radius: 20px;
+            padding: 8px;
+            gap: 3px;
+            width: 100%;
+            max-width: 280px;
+            aspect-ratio: 10 / 20;
+            box-shadow: inset 0 0 0 2px #5e71af;
+        }
+        .cell {
+            background: #1e2340;
+            border-radius: 6px;
+            transition: background 0.08s ease;
+            box-shadow: inset 0 -2px 2px #00000088;
+        }
+        .cell.filled {
+            background: #f1c40f;
+            box-shadow: inset 0 -3px 0 #b38f00, 0 0 12px #ffd966;
+        }
+        .cell.filled-i { background: #3cc7d6; box-shadow: inset 0 -3px 0 #1f9aaa; }
+        .cell.filled-o { background: #f4d03f; box-shadow: inset 0 -3px 0 #c6a21a; }
+        .cell.filled-t { background: #b983ff; box-shadow: inset 0 -3px 0 #8547e0; }
+        .cell.filled-s { background: #6fcf97; box-shadow: inset 0 -3px 0 #27ae60; }
+        .cell.filled-z { background: #e66767; box-shadow: inset 0 -3px 0 #c0392b; }
+        .cell.filled-l { background: #f9ca7f; box-shadow: inset 0 -3px 0 #e67e22; }
+        .cell.filled-j { background: #7aa5f5; box-shadow: inset 0 -3px 0 #2c6cd6; }
+
+        /* 右侧信息 (下一个 + 按钮) */
+        .info-panel {
+            flex: 1 1 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+        .next-piece {
+            background: #0f1322;
+            border: 3px solid #3b4780;
+            border-radius: 28px;
+            padding: 18px 8px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .next-title {
+            color: #adc0ec;
+            font-weight: 500;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+        #nextCanvas {
+            background: #090c17;
+            border-radius: 22px;
+            width: 90px;
+            height: 90px;
+            display: block;
+            box-shadow: inset 0 0 0 2px #3c4b7a;
+            touch-action: none;
+        }
+        /* 移动端专用方向 + 操作区 */
+        .touch-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .dpad-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .ctrl-btn {
+            background: #202842;
+            border: none;
+            border-bottom: 5px solid #3c4e86;
+            border-radius: 50px;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 0 #0b0f1e, 0 12px 20px black;
+            transition: all 0.05s linear;
+            touch-action: manipulation;
+            cursor: pointer;
+            outline: none;
+            padding: 0;
+            line-height: 1;
+        }
+        .ctrl-btn:active {
+            transform: translateY(6px);
+            border-bottom-width: 2px;
+            background: #2f3b62;
+        }
+        .ctrl-btn.special {
+            background: #c44545;
+            border-bottom-color: #882828;
+            font-size: 1.8rem;
+        }
+        .ctrl-btn.restart {
+            background: #3c4e86;
+            font-size: 1.3rem;
+            width: auto;
+            flex: 1;
+            border-bottom-color: #1f2a4a;
+        }
+        .action-row {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        /* 键盘提示 (桌面) */
+        .key-hint {
+            color: #6a7aa8;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 14px;
+            background: #0c1020;
+            padding: 6px 12px;
+            border-radius: 30px;
+            border: 1px solid #2f3b68;
+        }
+        @media (max-width: 400px) {
+            .ctrl-btn { width: 60px; height: 60px; font-size: 1.8rem; }
+            .game-wrapper { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-wrapper">
+    <div class="header">
+        <span class="next-label">🎮 TETRIS</span>
+        <span class="score-box" id="scoreDisplay">0</span>
+    </div>
+
+    <div class="play-area">
+        <!-- 左侧主游戏板 grid -->
+        <div class="board-section">
+            <div id="board"></div>
+        </div>
+
+        <!-- 右侧信息 + 触摸按键 -->
+        <div class="info-panel">
+            <div class="next-piece">
+                <div class="next-title">⬇️ NEXT</div>
+                <canvas id="nextCanvas" width="120" height="120"></canvas>
+            </div>
+
+            <!-- 所有触摸按钮都放在这里，移动端直接点击，桌面也可用 -->
+            <div class="touch-controls">
+                <div class="dpad-row">
+                    <button class="ctrl-btn" id="moveLeft" aria-label="左移">←</button>
+                    <button class="ctrl-btn" id="moveRight" aria-label="右移">→</button>
+                </div>
+                <div class="dpad-row">
+                    <button class="ctrl-btn" id="rotateBtn" aria-label="旋转">↻</button>
+                    <button class="ctrl-btn" id="hardDropBtn" aria-label="硬降">⬇️⬇️</button>
+                </div>
+                <div class="action-row">
+                    <button class="ctrl-btn restart" id="restartBtn" aria-label="新游戏">🔄 新局</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="key-hint">
+        ⬅️ ➡️ 移动 | ⬆️ 旋转 | ⬇️ 软降 | 空格 硬降 | 点击屏幕按钮也行
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- 俄罗斯方块核心参数 ----------
+        const COLS = 10;
+        const ROWS = 20;
+        let board = [];            // 二维 0 / 颜色标记 (存储方块类型字符)
+        let score = 0;
+        let gameOver = false;
+        let gameInterval = null;
+        const BASE_INTERVAL = 450;  // 毫秒
+
+        // 当前活动方块
+        let currentPiece = {
+            type: '',
+            matrix: [],
+            row: 0,
+            col: 3
+        };
+        let nextPieceType = '';
+
+        // 七种经典方块矩阵 + 颜色标记 (类型字母)
+        const PIECES = {
+            'I': { matrix: [[1,1,1,1]], color: 'i' },
+            'O': { matrix: [[1,1],[1,1]], color: 'o' },
+            'T': { matrix: [[0,1,0],[1,1,1]], color: 't' },
+            'S': { matrix: [[0,1,1],[1,1,0]], color: 's' },
+            'Z': { matrix: [[1,1,0],[0,1,1]], color: 'z' },
+            'L': { matrix: [[1,0,0],[1,1,1]], color: 'l' },
+            'J': { matrix: [[0,0,1],[1,1,1]], color: 'j' }
+        };
+        const TYPES = ['I','O','T','S','Z','L','J'];
+
+        // 获取随机类型
+        function randomType() {
+            return TYPES[Math.floor(Math.random() * TYPES.length)];
+        }
+
+        // ---------- 初始化棋盘 ----------
+        function initBoard() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(''));
+        }
+
+        // ---------- 生成新方块 (使用指定type或随机) ----------
+        function spawnNewPiece() {
+            if (!nextPieceType) {
+                nextPieceType = randomType();
+            }
+            // 当前块 = nextPieceType, 然后更新next
+            const type = nextPieceType;
+            const pieceData = PIECES[type];
+            currentPiece = {
+                type: type,
+                matrix: pieceData.matrix.map(row => [...row]), // 深拷贝
+                row: 0,
+                col: Math.floor((COLS - pieceData.matrix[0].length) / 2)
+            };
+            // 生成下一个
+            nextPieceType = randomType();
+
+            // 检查生成即碰撞 ==> game over
+            if (collision(currentPiece.matrix, currentPiece.row, currentPiece.col)) {
+                gameOver = true;
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+        }
+
+        // ---------- 碰撞检测 ----------
+        function collision(matrix, row, col) {
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[0].length; c++) {
+                    if (matrix[r][c] !== 0) {
+                        const boardR = row + r;
+                        const boardC = col + c;
+                        if (boardR >= ROWS || boardC < 0 || boardC >= COLS || boardR < 0) return true;
+                        if (boardR >= 0 && board[boardR][boardC] !== '') return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // ---------- 固定当前方块到棋盘 ----------
+        function lockPiece() {
+            const { matrix, row, col, type } = currentPiece;
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[0].length; c++) {
+                    if (matrix[r][c] !== 0) {
+                        const boardR = row + r;
+                        const boardC = col + c;
+                        if (boardR >= 0 && boardR < ROWS && boardC >= 0 && boardC < COLS) {
+                            board[boardR][boardC] = type;   // 存储类型字母用于颜色
+                        }
+                    }
+                }
+            }
+
+            // 消除满行并计分
+            clearFullRows();
+
+            // 生成下一个块
+            spawnNewPiece();
+
+            // 如果gameOver在spawn中被设置，则停止定时器
+            if (gameOver) {
+                if (gameInterval) {
+                    clearInterval(gameInterval);
+                    gameInterval = null;
+                }
+            }
+        }
+
+        // 消除满行
+        function clearFullRows() {
+            let rowsCleared = 0;
+            for (let r = ROWS - 1; r >= 0; ) {
+                if (board[r].every(cell => cell !== '')) {
+                    // 移除该行
+                    board.splice(r, 1);
+                    board.unshift(Array(COLS).fill(''));
+                    rowsCleared++;
+                    // 继续检查同一索引（原上一行下沉）
+                } else {
+                    r--;
+                }
+            }
+
+            if (rowsCleared > 0) {
+                // 经典计分规则简单版
+                const points = [0, 100, 300, 600, 1000];
+                const addScore = points[Math.min(rowsCleared,4)];
+                score += addScore;
+                updateScore();
+            }
+        }
+
+        // ---------- 移动尝试 ----------
+        function movePiece(dRow, dCol) {
+            if (gameOver || !currentPiece.matrix) return false;
+            const newRow = currentPiece.row + dRow;
+            const newCol = currentPiece.col + dCol;
+            if (!collision(currentPiece.matrix, newRow, newCol)) {
+                currentPiece.row = newRow;
+                currentPiece.col = newCol;
+                renderAll();
+                return true;
+            }
+            // 如果是向下移动失败( dRow === 1 )，立刻固定
+            if (dRow === 1) {
+                lockPiece();
+                renderAll();
+            }
+            return false;
+        }
+
+        // 旋转
+        function rotatePiece() {
+            if (gameOver || !currentPiece.matrix) return;
+            // 矩阵顺时针旋转90度
+            const oldMatrix = currentPiece.matrix;
+            const rotated = oldMatrix[0].map((_, idx) => oldMatrix.map(row => row[idx]).reverse());
+            // 踢墙简易处理 —— 只尝试左中右微调 (左移1, 0, 右移1)
+            const tests = [
+                { col: currentPiece.col },                     // 原偏移
+                { col: currentPiece.col - 1 },                 // 左移1
+                { col: currentPiece.col + 1 },                 // 右移1
+                { col: currentPiece.col - 2 },                 // 左移2 (窄板)
+                { col: currentPiece.col + 2 }                  // 右移2
+            ];
+            for (let t of tests) {
+                if (!collision(rotated, currentPiece.row, t.col)) {
+                    currentPiece.matrix = rotated;
+                    currentPiece.col = t.col;
+                    renderAll();
+                    return;
+                }
+            }
+            // 无法旋转则放弃
+        }
+
+        // 硬降
+        function hardDrop() {
+            if (gameOver || !currentPiece.matrix) return;
+            while (!collision(currentPiece.matrix, currentPiece.row + 1, currentPiece.col)) {
+                currentPiece.row++;
+            }
+            lockPiece();  // 固定并生成下一块
+            renderAll();
+        }
+
+        // 更新HTML分数
+        function updateScore() {
+            document.getElementById('scoreDisplay').innerText = score;
+        }
+
+        // ---------- 渲染主棋盘 (grid) ----------
+        const boardEl = document.getElementById('board');
+        function renderBoardGrid() {
+            // 清空并重新构建grid (保证cell数量正确)
+            boardEl.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    const cellType = board[r][c];
+                    if (cellType !== '') {
+                        cell.classList.add('filled');
+                        // 增加特定颜色类 .filled-i ...
+                        cell.classList.add(`filled-${cellType.toLowerCase()}`);
+                    }
+                    boardEl.appendChild(cell);
+                }
+            }
+
+            // 绘制当前活动块（覆盖颜色, 修改已存在cell类）
+            if (currentPiece && currentPiece.matrix && !gameOver) {
+                const { matrix, row, col, type } = currentPiece;
+                for (let r = 0; r < matrix.length; r++) {
+                    for (let c = 0; c < matrix[0].length; c++) {
+                        if (matrix[r][c] !== 0) {
+                            const boardR = row + r;
+                            const boardC = col + c;
+                            if (boardR >= 0 && boardR < ROWS && boardC >= 0 && boardC < COLS) {
+                                const index = boardR * COLS + boardC;
+                                const cellDiv = boardEl.children[index];
+                                if (cellDiv) {
+                                    // 先移除所有filled-* 再设置当前
+                                    cellDiv.className = 'cell filled';
+                                    cellDiv.classList.add(`filled-${type.toLowerCase()}`);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 游戏结束蒙层效果
+            if (gameOver) {
+                // 在棋盘上显示红晕(不额外加div, 用叠加层显示文字)
+                // 简单在parent放个覆盖提示？
+                if (!boardEl.parentNode.querySelector('.gameover-overlay')) {
+                    // 但为避免复杂，直接在棋盘下方显示文字吧(通过伪类很难)，动态加div有点破坏布局，用轻提示
+                }
+                // 我们可以画一个半透明遮罩？为了保持简单，在分数旁边显示文字
+            }
+        }
+
+        // 渲染下一个方块 (canvas)
+        const nextCanvas = document.getElementById('nextCanvas');
+        const ctx = nextCanvas.getContext('2d');
+        function renderNext() {
+            ctx.clearRect(0, 0, 120, 120);
+            if (!nextPieceType) return;
+            const piece = PIECES[nextPieceType];
+            const matrix = piece.matrix;
+            const colorMap = {
+                'i': '#3cc7d6', 'o': '#f4d03f', 't': '#b983ff',
+                's': '#6fcf97', 'z': '#e66767', 'l': '#f9ca7f', 'j': '#7aa5f5'
+            };
+            const fillColor = colorMap[piece.color] || '#f1c40f';
+            const blockSize = 24; // 120 / 5 ≈24 但留白
+            const cols = matrix[0].length;
+            const rows = matrix.length;
+            const offsetX = (120 - cols * blockSize) / 2;
+            const offsetY = (120 - rows * blockSize) / 2;
+
+            for (let r=0; r<rows; r++) {
+                for (let c=0; c<cols; c++) {
+                    if (matrix[r][c] !== 0) {
+                        ctx.fillStyle = fillColor;
+                        ctx.shadowColor = '#ffffff30';
+                        ctx.shadowBlur = 10;
+                        ctx.beginPath();
+                        ctx.roundRect(offsetX + c * blockSize, offsetY + r * blockSize, blockSize-2, blockSize-2, 6);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = '#00000030';
+                        ctx.beginPath();
+                        ctx.roundRect(offsetX + c * blockSize, offsetY + r * blockSize, blockSize-2, 4, 2);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+
+        // 工具: canvas roundRect
+        CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.moveTo(x + r, y);
+            this.lineTo(x + w - r, y);
+            this.quadraticCurveTo(x + w, y, x + w, y + r);
+            this.lineTo(x + w, y + h - r);
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            this.lineTo(x + r, y + h);
+            this.quadraticCurveTo(x, y + h, x, y + h - r);
+            this.lineTo(x, y + r);
+            this.quadraticCurveTo(x, y, x + r, y);
+            this.closePath();
+            return this;
+        };
+
+        function renderAll() {
+            renderBoardGrid();
+            renderNext();
+        }
+
+        // 重置游戏
+        function resetGame() {
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            initBoard();
+            score = 0;
+            updateScore();
+            gameOver = false;
+            nextPieceType = randomType();
+            spawnNewPiece();   // 会消耗next并生成新next
+            renderAll();
+
+            // 启动定时器
+            if (!gameInterval) {
+                gameInterval = setInterval(() => {
+                    if (!gameOver && currentPiece) {
+                        movePiece(1, 0);  // 下落
+                    } else if (gameOver) {
+                        if (gameInterval) clearInterval(gameInterval);
+                    }
+                }, BASE_INTERVAL);
+            }
+        }
+
+        // ---------- 事件绑定 ----------
+        function bindControls() {
+            // 移动端按钮
+            document.getElementById('moveLeft').addEventListener('click', (e) => { e.preventDefault(); movePiece(0, -1); });
+            document.getElementById('moveRight').addEventListener('click', (e) => { e.preventDefault(); movePiece(0, 1); });
+            document.getElementById('rotateBtn').addEventListener('click', (e) => { e.preventDefault(); rotatePiece(); });
+            document.getElementById('hardDropBtn').addEventListener('click', (e) => { e.preventDefault(); hardDrop(); });
+            document.getElementById('restartBtn').addEventListener('click', (e) => { e.preventDefault(); resetGame(); });
+
+            // 键盘事件 (桌面)
+            window.addEventListener('keydown', (e) => {
+                const key = e.key;
+                if (gameOver) {
+                    if (key === ' ' || key === 'Space' || key === 'Enter') {
+                        e.preventDefault();
+                        resetGame();
+                    }
+                    return;
+                }
+                // 防止页面滚动
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(key)) {
+                    e.preventDefault();
+                }
+                switch (key) {
+                    case 'ArrowLeft': movePiece(0, -1); break;
+                    case 'ArrowRight': movePiece(0, 1); break;
+                    case 'ArrowDown': movePiece(1, 0); break;
+                    case 'ArrowUp': rotatePiece(); break;
+                    case ' ':
+                    case 'Space': hardDrop(); break;
+                }
+            });
+        }
+
+        // 禁止触摸时页面缩放/滚动 (已经通过CSS + meta)
+        // 启动
+        window.onload = () => {
+            resetGame();
+            bindControls();
+        };
+    })();
+</script>
+</body>
+</html>
