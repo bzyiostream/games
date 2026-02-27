@@ -1,224 +1,553 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>五子棋游戏</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>五子棋 · 人机对战</title>
     <style>
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
-        
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
             min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-        
-        .back-link {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            color: #4facfe;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-            padding: 10px 15px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            border: 2px solid #4facfe;
-            transition: all 0.3s;
-        }
-        
-        .back-link:hover {
-            background: #4facfe;
-            color: white;
-            text-decoration: none;
-        }
-        
-        /* 开局选择界面样式 */
-        .game-setup {
-            text-align: center;
-            padding: 40px 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin: 20px auto;
-            max-width: 500px;
-        }
-        
-        .game-setup h2 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 1.8rem;
-            text-shadow: none;
-        }
-        
-        .setup-options {
+            background: linear-gradient(145deg, #2b5a3a 0%, #1d3e2a 100%);
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
             display: flex;
-            gap: 20px;
             justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .setup-btn {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            border: none;
-            border-radius: 15px;
-            padding: 25px 20px;
-            min-width: 150px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 10px;
+            padding: 12px;
         }
-        
-        .setup-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(79, 172, 254, 0.4);
+        .game-container {
+            max-width: 600px;
+            width: 100%;
+            background: #e8d5b5;
+            background-image: radial-gradient(circle at 25% 30%, #f0e3ce, #dac8a4);
+            border-radius: 36px 36px 28px 28px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6), inset 0 1px 6px #fff3d6;
+            padding: 22px 16px 26px;
+            border: 2px solid #b49a67;
         }
-        
-        .btn-icon {
-            font-size: 2rem;
+        h1 {
+            text-align: center;
+            margin: 0 0 8px 0;
+            font-weight: 400;
+            font-size: 2.1rem;
+            letter-spacing: 8px;
+            color: #2f2216;
+            text-shadow: 2px 2px 0 #c9ad7a, 4px 4px 0 #6b4f32;
+            font-family: 'Trebuchet MS', 'KaiTi',楷体,serif;
         }
-        
-        .btn-text {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-        
-        .btn-desc {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-        
-        /* 游戏区域样式 */
-        .game-area {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* 游戏信息区域增强 */
-        .game-info {
+        .status-bar {
+            background: #493624;
+            border-radius: 60px;
+            padding: 12px 20px;
+            margin: 10px 0 16px;
+            color: #eedbba;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: inset 0 2px 5px #1f130b, 0 5px 0 #2b1c12;
+            border-bottom: 2px solid #7d5f44;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .turn-indicator {
+            background: #5f4633;
+            padding: 6px 24px;
+            border-radius: 40px;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: #f5e1c4;
+            box-shadow: inset 0 -2px 0 #312419;
+        }
+        .restart-btn {
+            background: #cfa668;
+            border: none;
+            font-size: 1.3rem;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: #262216;
+            box-shadow: 0 5px 0 #7b583b, 0 6px 10px black;
+            cursor: pointer;
+            transition: all 0.08s linear;
+            border: 1px solid #ecceaa;
+        }
+        .restart-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #7b583b, 0 6px 10px black;
+        }
+        .game-panel {
+            display: flex;
             flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .first-move-box {
+            background: #ac8e6b;
+            padding: 8px 12px;
+            border-radius: 48px;
+            box-shadow: inset 0 1px 6px #ffefd1, 0 5px 0 #5e4430;
+            display: flex;
             gap: 15px;
         }
-        
-        .game-info button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .first-move-box button {
+            background: #ecdbba;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            font-size: 1.25rem;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #342918;
+            box-shadow: 0 4px 0 #82684d;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            transition: 0.06s linear;
+            border: 1px solid #ffeac6;
+            flex: 1;
+            white-space: nowrap;
         }
-        
-        .game-info button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .first-move-box button:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #82684d;
         }
-
-        @media (max-width: 768px) {
-            .back-link {
-                top: 10px;
-                left: 10px;
-                font-size: 14px;
-                padding: 8px 12px;
-            }
-            
-            body {
-                padding: 10px;
-            }
-            
-            .game-setup {
-                padding: 30px 15px;
-                margin: 10px;
-            }
-            
-            .game-setup h2 {
-                font-size: 1.5rem;
-            }
-            
-            .setup-options {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .setup-btn {
-                min-width: 200px;
-                padding: 20px 15px;
-            }
-            
-            .game-info {
-                justify-content: center;
-                text-align: center;
-            }
+        .first-move-box button.selected {
+            background: #f5d798;
+            box-shadow: 0 2px 0 #82684d;
+            transform: translateY(2px);
+            border-color: #ffc107;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #f2e3c6;
+            border-radius: 28px;
+            box-shadow: inset 0 0 0 2px #b30000, 0 20px 20px rgba(0,0,0,0.4);
+            border: 6px solid #664a30;
+            margin: 10px 0 5px;
+            touch-action: none;  /* 禁止触摸滚动/缩放 */
+            cursor: pointer;
+        }
+        .footer-note {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            color: #392f22;
+            font-weight: 500;
+            font-size: 1.2rem;
+            margin-top: 12px;
+        }
+        .footer-note span {
+            background: #ac8e6b;
+            padding: 4px 20px;
+            border-radius: 40px;
+            box-shadow: inset 0 1px 5px #fad6a0;
+        }
+        /* 移动端优化 */
+        @media (max-width: 480px) {
+            .game-container { padding: 12px; }
+            .status-bar { font-size: 1.2rem; padding: 8px 12px; }
+            .turn-indicator { font-size: 1rem; padding: 4px 16px; }
+            .restart-btn { font-size: 1.1rem; padding: 6px 14px; }
+            .first-move-box button { font-size: 1rem; padding: 6px 8px; }
         }
     </style>
 </head>
 <body>
-    <a href="../index.html" class="back-link">← 返回首页</a>
-    <div class="container">
-        <h1>五子棋</h1>
-
-        <!-- 开局选择界面 -->
-        <div id="game-setup" class="game-setup">
-            <h2>选择开局模式</h2>
-            <div class="setup-options">
-                <button id="humanFirst" class="setup-btn">
-                    <span class="btn-icon">♟️</span>
-                    <span class="btn-text">人先手</span>
-                    <span class="btn-desc">你执黑子先行</span>
-                </button>
-                <button id="aiFirst" class="setup-btn">
-                    <span class="btn-icon">🤖</span>
-                    <span class="btn-text">AI先手</span>
-                    <span class="btn-desc">AI执黑子先行</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- 游戏界面 -->
-        <div id="game-area" class="game-area" style="display: none;">
-            <div class="game-info">
-                <div class="status">当前玩家: <span id="current-player">黑子</span></div>
-                <div class="mode">
-                    <span class="mode-label">AI对战模式</span>
-                </div>
-                <button id="restart">重新开始</button>
-                <button id="change-setup">修改开局</button>
-            </div>
-
-            <div class="board-container">
-                <div id="board"></div>
-            </div>
+<div class="game-container">
+    <h1>⚫ 五子棋 ⚪</h1>
+    <div class="status-bar">
+        <span class="turn-indicator" id="turnText">玩家回合⚫</span>
+        <button class="restart-btn" id="restartBtn">↺ 新一局</button>
+    </div>
+    <div class="game-panel">
+        <div class="first-move-box" id="firstMoveBox">
+            <button id="btnPlayerFirst" class="selected">🙋 我先手</button>
+            <button id="btnAIFirst">🤖 机器先手</button>
         </div>
     </div>
+    <!-- 棋盘canvas -->
+    <canvas id="gobanCanvas" width="550" height="550"></canvas>
+    <div class="footer-note">
+        <span>⚫ 黑先</span>
+        <span>🤖 AI·中阶</span>
+    </div>
+</div>
 
-    <script src="script.js"></script>
+<script>
+    (function() {
+        // ---------- 配置参数 ----------
+        const BOARD_SIZE = 15;           // 15x15 标准五子棋
+        let board = [];                  // 二维数组 0空 1黑(玩家) 2白(机器)
+        let gameOver = false;
+        let playerTurn = true;            // true = 玩家(黑棋)回合, false = 机器(白棋)回合
+        let playerColor = 1;              // 玩家永远执黑(1)
+        let aiColor = 2;                  // 机器永远执白(2)
+        let AI_FIRST = false;              // 默认玩家先手
+        
+        const canvas = document.getElementById('gobanCanvas');
+        const ctx = canvas.getContext('2d');
+        const turnText = document.getElementById('turnText');
+        const btnPlayerFirst = document.getElementById('btnPlayerFirst');
+        const btnAIFirst = document.getElementById('btnAIFirst');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // 棋盘格点坐标缓存 (绘制用)
+        let gridSize = 0;
+        let offset = 0;
+        let points = [];
+
+        // ---------- 初始化棋盘 ----------
+        function initBoard() {
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+            gameOver = false;
+            // 根据先手设定 玩家回合 / 机器回合
+            playerTurn = !AI_FIRST;    // 如果AI先手( AI_FIRST = true )，则playerTurn = false，机器先下
+            if (AI_FIRST) {
+                // 机器先手： 机器下白棋(2)，但棋盘还是空的，需要立即让AI下一手吗？ 等渲染结束后调用AI行动
+                turnText.innerText = '机器回合⚪';
+            } else {
+                turnText.innerText = '玩家回合⚫';
+            }
+            drawBoard();
+            // 如果机器先手，则触发AI下棋 (但需要等绘制完成，且非游戏结束)
+            if (AI_FIRST && !gameOver) {
+                setTimeout(() => machineMove(), 150); // 稍微延迟，让渲染与交互准备好
+            }
+        }
+
+        // ---------- 绘制棋盘 & 棋子 ----------
+        function drawBoard() {
+            const dim = canvas.width; // 正方形
+            ctx.clearRect(0, 0, dim, dim);
+            
+            // 画棋盘线
+            const margin = Math.floor(dim * 0.06);
+            const maxPos = dim - margin;
+            gridSize = (maxPos - margin) / (BOARD_SIZE - 1);
+            offset = margin;
+            
+            // 背景色木质
+            ctx.fillStyle = '#e8cfaa';
+            ctx.fillRect(0, 0, dim, dim);
+            
+            // 绘制网格线
+            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = '#5f4c3b';
+            // 垂直线
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                const x = offset + i * gridSize;
+                ctx.beginPath();
+                ctx.moveTo(x, offset);
+                ctx.lineTo(x, offset + (BOARD_SIZE-1) * gridSize);
+                ctx.stroke();
+            }
+            // 水平线
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                const y = offset + i * gridSize;
+                ctx.beginPath();
+                ctx.moveTo(offset, y);
+                ctx.lineTo(offset + (BOARD_SIZE-1) * gridSize, y);
+                ctx.stroke();
+            }
+            
+            // 画星位 (天元/小目)
+            const starPoints = [3, 7, 11]; // 五子棋常见星位: 3,7,11  (0-based 索引 3,7,11)
+            ctx.fillStyle = '#5f4c3b';
+            for (let r of starPoints) {
+                for (let c of starPoints) {
+                    ctx.beginPath();
+                    ctx.arc(offset + r * gridSize, offset + c * gridSize, gridSize*0.12, 0, 2*Math.PI);
+                    ctx.fill();
+                }
+            }
+            // 额外两侧星 (靠边星位 3-11, 11-3)
+            ctx.beginPath();
+            ctx.arc(offset + 3 * gridSize, offset + 11 * gridSize, gridSize*0.12, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(offset + 11 * gridSize, offset + 3 * gridSize, gridSize*0.12, 0, 2*Math.PI);
+            ctx.fill();
+            
+            // 画所有棋子
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    if (board[row][col] === 0) continue;
+                    const x = offset + col * gridSize;
+                    const y = offset + row * gridSize;
+                    // 阴影效果
+                    ctx.shadowColor = '#00000055';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 2;
+                    ctx.shadowOffsetY = 2;
+                    
+                    const gradient = ctx.createRadialGradient(x-4, y-4, 3, x, y, gridSize*0.7);
+                    if (board[row][col] === 1) {  // 黑
+                        gradient.addColorStop(0, '#333');
+                        gradient.addColorStop(0.7, '#111');
+                        gradient.addColorStop(1, '#000');
+                    } else {  // 白
+                        gradient.addColorStop(0, '#fafafc');
+                        gradient.addColorStop(0.5, '#ddd');
+                        gradient.addColorStop(1, '#aaa');
+                    }
+                    ctx.beginPath();
+                    ctx.arc(x, y, gridSize * 0.42, 0, 2 * Math.PI);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    // 高光
+                    ctx.shadowBlur = 2;
+                    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+                    ctx.beginPath();
+                    ctx.arc(x-3, y-3, gridSize*0.1, 0, 2*Math.PI);
+                    ctx.fillStyle = '#ffffff60';
+                    ctx.fill();
+                }
+            }
+            ctx.shadowColor = 'transparent'; // 关掉阴影避免影响后续
+            ctx.shadowBlur = 0;
+        }
+
+        // ---------- 检查五子连线 (赢家) ----------
+        function checkWinner(row, col, color) {
+            if (!color) return false;
+            const directions = [[1,0],[0,1],[1,1],[1,-1]];
+            for (let [dx, dy] of directions) {
+                let count = 1;
+                // 正方向
+                for (let step = 1; step < 5; step++) {
+                    const nr = row + dx * step, nc = col + dy * step;
+                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== color) break;
+                    count++;
+                }
+                // 反方向
+                for (let step = 1; step < 5; step++) {
+                    const nr = row - dx * step, nc = col - dy * step;
+                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== color) break;
+                    count++;
+                }
+                if (count >= 5) return true;
+            }
+            return false;
+        }
+
+        // ---------- 检查棋盘是否已满 (平局) ----------
+        function isBoardFull() {
+            for (let row of board) {
+                if (row.includes(0)) return false;
+            }
+            return true;
+        }
+
+        // ---------- 游戏结束处理 ----------
+        function handleGameOver(winner) {
+            gameOver = true;
+            if (winner === 1) turnText.innerText = '🏆 玩家胜！';
+            else if (winner === 2) turnText.innerText = '🤖 机器胜！';
+            else turnText.innerText = '🤝 平局';
+        }
+
+        // ---------- 玩家落子 ----------
+        function playerMove(row, col) {
+            if (!playerTurn || gameOver) return false;
+            if (board[row][col] !== 0) return false;
+            
+            // 落子
+            board[row][col] = playerColor; // 1
+            drawBoard();
+            
+            // 检查胜利
+            if (checkWinner(row, col, playerColor)) {
+                handleGameOver(1);
+                return true;
+            } else if (isBoardFull()) {
+                handleGameOver(0);
+                return true;
+            }
+            
+            // 切换回合给AI
+            playerTurn = false;
+            turnText.innerText = '机器回合⚪';
+            
+            // 启动AI (短暂延迟，避免阻塞点击事件)
+            setTimeout(() => machineMove(), 200);
+            return true;
+        }
+
+        // ---------- 机器AI (中等智能) 这里实现一个简单但有效的启发式AI---------- 
+        function machineMove() {
+            if (gameOver) return;
+            if (playerTurn) return; // 防止乱入
+            
+            // 收集空位
+            let empty = [];
+            for (let i=0; i<BOARD_SIZE; i++) {
+                for (let j=0; j<BOARD_SIZE; j++) {
+                    if (board[i][j] === 0) empty.push([i, j]);
+                }
+            }
+            if (empty.length === 0) {
+                // 平局
+                handleGameOver(0);
+                return;
+            }
+            
+            // 简单但有一定棋力的打分: 进攻(白)和防守(黑)结合。AI执白，既要最大化自己连子，也要阻碍黑棋
+            let bestScore = -1;
+            let bestMoves = [];
+            
+            for (let [r, c] of empty) {
+                let score = 0;
+                // 进攻分 (对白方)
+                score += evaluatePosition(r, c, aiColor) * 1.5;  // 进攻系数1.5
+                // 防守分 (对玩家黑方)  * 1.2 防守倾向
+                score += evaluatePosition(r, c, playerColor) * 1.2;
+                
+                // 轻微中心偏好 (增加初期稳定性)
+                const center = 7;
+                const dist = Math.abs(r-center) + Math.abs(c-center);
+                score += (BOARD_SIZE*2 - dist) * 1.5;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMoves = [[r, c]];
+                } else if (Math.abs(score - bestScore) < 0.001) {
+                    bestMoves.push([r, c]);
+                }
+            }
+            
+            if (bestMoves.length === 0) return; 
+            // 随机选一个最佳(防止固定走法)
+            const [aiRow, aiCol] = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+            
+            // 执行AI落子
+            board[aiRow][aiCol] = aiColor; // 2
+            drawBoard();
+            
+            if (checkWinner(aiRow, aiCol, aiColor)) {
+                handleGameOver(2);
+                return;
+            } else if (isBoardFull()) {
+                handleGameOver(0);
+                return;
+            }
+            
+            // 交还玩家
+            playerTurn = true;
+            turnText.innerText = '玩家回合⚫';
+        }
+
+        // 评估在某位置放置某颜色的潜在得分 (基于方向计数)
+        function evaluatePosition(row, col, color) {
+            let totalScore = 0;
+            const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+            
+            for (let [dx, dy] of dirs) {
+                let count = 1; // 假设下了棋子
+                // 正方向
+                let openLeft = 0, openRight = 0;
+                for (let step = 1; step < 5; step++) {
+                    const nr = row + dx * step, nc = col + dy * step;
+                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
+                    if (board[nr][nc] === color) count++;
+                    else if (board[nr][nc] === 0) { openRight++; break; } // 遇到空停止计数但计入开放度?
+                    else break; // 对方棋子阻挡
+                }
+                for (let step = 1; step < 5; step++) {
+                    const nr = row - dx * step, nc = col - dy * step;
+                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
+                    if (board[nr][nc] === color) count++;
+                    else if (board[nr][nc] === 0) { openLeft++; break; } 
+                    else break;
+                }
+                // 简单计分: 连续的棋子越多分越高, 同时开放度略微奖励 (活二、活三)
+                if (count >= 5) totalScore += 10000;  // 直接获胜位置
+                else if (count === 4) {
+                    if (openLeft > 0 || openRight > 0) totalScore += 3000;  // 活四
+                    else totalScore += 1000;  // 冲四
+                }
+                else if (count === 3) {
+                    if (openLeft > 0 && openRight > 0) totalScore += 600;   // 活三
+                    else if (openLeft > 0 || openRight > 0) totalScore += 200; // 眠三/冲三
+                }
+                else if (count === 2) {
+                    if (openLeft > 0 && openRight > 0) totalScore += 80;
+                    else if (openLeft > 0 || openRight > 0) totalScore += 20;
+                }
+                else if (count === 1) totalScore += 2;
+            }
+            return totalScore;
+        }
+
+        // ---------- 画布点击/触摸事件 转换为棋盘行列 ----------
+        function handleCanvasTap(e) {
+            e.preventDefault(); // 阻止默认滚动
+            if (gameOver) return;
+            if (!playerTurn) {
+                alert('现在是机器回合，请稍候');
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;   // canvas物理像素比
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            // 计算canvas画布上的坐标 (px)
+            const canvasX = (clientX - rect.left) * scaleX;
+            const canvasY = (clientY - rect.top) * scaleY;
+            
+            // 映射到格子
+            const margin = offset;
+            if (canvasX < margin - gridSize/2 || canvasX > margin + (BOARD_SIZE-1)*gridSize + gridSize/2 ||
+                canvasY < margin - gridSize/2 || canvasY > margin + (BOARD_SIZE-1)*gridSize + gridSize/2) {
+                return; // 超出棋盘
+            }
+            
+            // 计算最近的交叉点
+            const col = Math.round((canvasX - margin) / gridSize);
+            const row = Math.round((canvasY - margin) / gridSize);
+            if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
+            
+            playerMove(row, col);
+        }
+
+        // ---------- 切换先手 ----------
+        function setFirstPlayer(isAIFirst) {
+            AI_FIRST = isAIFirst;
+            btnPlayerFirst.classList.toggle('selected', !AI_FIRST);
+            btnAIFirst.classList.toggle('selected', AI_FIRST);
+            initBoard(); // 重置棋盘，并根据AI_FIRST决定谁先
+        }
+
+        // ---------- 事件绑定 ----------
+        canvas.addEventListener('click', handleCanvasTap);
+        canvas.addEventListener('touchstart', handleCanvasTap, { passive: false });
+
+        btnPlayerFirst.addEventListener('click', () => setFirstPlayer(false));
+        btnAIFirst.addEventListener('click', () => setFirstPlayer(true));
+        restartBtn.addEventListener('click', () => initBoard());
+
+        // 初始化: 玩家先手
+        initBoard();
+
+        // 响应窗口resize (重新绘制canvas尺寸适应)
+        window.addEventListener('resize', () => { drawBoard(); });
+    })();
+</script>
 </body>
 </html>
