@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>五子棋 · 人机对战</title>
+    <title>五子棋 · 移动优化版</title>
     <style>
         * {
             box-sizing: border-box;
@@ -18,7 +18,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 12px;
+            padding: 8px;
         }
         .game-container {
             max-width: 600px;
@@ -27,15 +27,15 @@
             background-image: radial-gradient(circle at 25% 30%, #f0e3ce, #dac8a4);
             border-radius: 36px 36px 28px 28px;
             box-shadow: 0 20px 30px rgba(0,0,0,0.6), inset 0 1px 6px #fff3d6;
-            padding: 22px 16px 26px;
+            padding: 18px 12px 22px;
             border: 2px solid #b49a67;
         }
         h1 {
             text-align: center;
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
             font-weight: 400;
-            font-size: 2.1rem;
-            letter-spacing: 8px;
+            font-size: 2rem;
+            letter-spacing: 6px;
             color: #2f2216;
             text-shadow: 2px 2px 0 #c9ad7a, 4px 4px 0 #6b4f32;
             font-family: 'Trebuchet MS', 'KaiTi',楷体,serif;
@@ -43,10 +43,10 @@
         .status-bar {
             background: #493624;
             border-radius: 60px;
-            padding: 12px 20px;
-            margin: 10px 0 16px;
+            padding: 10px 16px;
+            margin: 8px 0 12px;
             color: #eedbba;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 600;
             text-align: center;
             box-shadow: inset 0 2px 5px #1f130b, 0 5px 0 #2b1c12;
@@ -57,18 +57,18 @@
         }
         .turn-indicator {
             background: #5f4633;
-            padding: 6px 24px;
+            padding: 4px 18px;
             border-radius: 40px;
-            font-size: 1.3rem;
-            letter-spacing: 2px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
             color: #f5e1c4;
             box-shadow: inset 0 -2px 0 #312419;
         }
         .restart-btn {
             background: #cfa668;
             border: none;
-            font-size: 1.3rem;
-            padding: 8px 20px;
+            font-size: 1.2rem;
+            padding: 6px 16px;
             border-radius: 40px;
             font-weight: bold;
             color: #262216;
@@ -86,22 +86,22 @@
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            margin-bottom: 18px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
         .first-move-box {
             background: #ac8e6b;
-            padding: 8px 12px;
+            padding: 6px 8px;
             border-radius: 48px;
             box-shadow: inset 0 1px 6px #ffefd1, 0 5px 0 #5e4430;
             display: flex;
-            gap: 15px;
+            gap: 10px;
         }
         .first-move-box button {
             background: #ecdbba;
             border: none;
-            font-size: 1.25rem;
-            padding: 8px 18px;
+            font-size: 1.1rem;
+            padding: 6px 14px;
             border-radius: 40px;
             font-weight: 600;
             color: #342918;
@@ -122,17 +122,38 @@
             transform: translateY(2px);
             border-color: #ffc107;
         }
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            margin: 8px 0 2px;
+            touch-action: none;  /* 禁止触摸滚动/缩放 */
+        }
         canvas {
             display: block;
             width: 100%;
-            aspect-ratio: 1/1;
+            height: 100%;
             background: #f2e3c6;
             border-radius: 28px;
             box-shadow: inset 0 0 0 2px #b30000, 0 20px 20px rgba(0,0,0,0.4);
             border: 6px solid #664a30;
-            margin: 10px 0 5px;
-            touch-action: none;  /* 禁止触摸滚动/缩放 */
             cursor: pointer;
+            touch-action: none;
+        }
+        /* 触摸点反馈（移动端显示点击位置） */
+        .touch-feedback {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 180, 0.5);
+            border: 3px solid #ffaa00;
+            box-shadow: 0 0 20px gold;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s ease;
+            z-index: 10;
+            opacity: 0;
         }
         .footer-note {
             display: flex;
@@ -140,22 +161,24 @@
             gap: 20px;
             color: #392f22;
             font-weight: 500;
-            font-size: 1.2rem;
-            margin-top: 12px;
+            font-size: 1.1rem;
+            margin-top: 8px;
         }
         .footer-note span {
             background: #ac8e6b;
-            padding: 4px 20px;
+            padding: 4px 16px;
             border-radius: 40px;
             box-shadow: inset 0 1px 5px #fad6a0;
         }
         /* 移动端优化 */
         @media (max-width: 480px) {
-            .game-container { padding: 12px; }
-            .status-bar { font-size: 1.2rem; padding: 8px 12px; }
-            .turn-indicator { font-size: 1rem; padding: 4px 16px; }
-            .restart-btn { font-size: 1.1rem; padding: 6px 14px; }
-            .first-move-box button { font-size: 1rem; padding: 6px 8px; }
+            .game-container { padding: 10px; }
+            .status-bar { font-size: 1.1rem; padding: 6px 10px; }
+            .turn-indicator { font-size: 0.95rem; padding: 4px 12px; }
+            .restart-btn { font-size: 1rem; padding: 5px 12px; }
+            .first-move-box button { font-size: 0.9rem; padding: 5px 8px; }
+            .footer-note { font-size: 0.9rem; gap: 10px; }
+            .footer-note span { padding: 3px 10px; }
         }
     </style>
 </head>
@@ -172,8 +195,11 @@
             <button id="btnAIFirst">🤖 机器先手</button>
         </div>
     </div>
-    <!-- 棋盘canvas -->
-    <canvas id="gobanCanvas" width="550" height="550"></canvas>
+    <!-- 棋盘canvas包装层，用于绝对定位触摸反馈 -->
+    <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="gobanCanvas" width="550" height="550"></canvas>
+        <div class="touch-feedback" id="touchFeedback"></div>
+    </div>
     <div class="footer-note">
         <span>⚫ 黑先</span>
         <span>🤖 AI·中阶</span>
@@ -191,56 +217,77 @@
         let aiColor = 2;                  // 机器永远执白(2)
         let AI_FIRST = false;              // 默认玩家先手
         
+        // 记录最新落子位置
+        let lastMove = null;               
+
         const canvas = document.getElementById('gobanCanvas');
         const ctx = canvas.getContext('2d');
         const turnText = document.getElementById('turnText');
         const btnPlayerFirst = document.getElementById('btnPlayerFirst');
         const btnAIFirst = document.getElementById('btnAIFirst');
         const restartBtn = document.getElementById('restartBtn');
+        const wrapper = document.getElementById('canvasWrapper');
+        const touchFeedback = document.getElementById('touchFeedback');
 
-        // 棋盘格点坐标缓存 (绘制用)
+        // 棋盘格点坐标缓存
         let gridSize = 0;
         let offset = 0;
-        let points = [];
+
+        // 显示触摸点反馈
+        function showTouchFeedback(clientX, clientY) {
+            const rect = wrapper.getBoundingClientRect();
+            // 计算相对于wrapper的比例位置
+            const relativeX = clientX - rect.left;
+            const relativeY = clientY - rect.top;
+            
+            // 边界检查，只在棋盘区域内显示
+            if (relativeX >= 0 && relativeX <= rect.width && relativeY >= 0 && relativeY <= rect.height) {
+                touchFeedback.style.left = relativeX + 'px';
+                touchFeedback.style.top = relativeY + 'px';
+                touchFeedback.style.opacity = '1';
+                
+                // 0.2秒后淡出
+                clearTimeout(window.feedbackTimer);
+                window.feedbackTimer = setTimeout(() => {
+                    touchFeedback.style.opacity = '0';
+                }, 200);
+            }
+        }
 
         // ---------- 初始化棋盘 ----------
         function initBoard() {
             board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
             gameOver = false;
-            // 根据先手设定 玩家回合 / 机器回合
-            playerTurn = !AI_FIRST;    // 如果AI先手( AI_FIRST = true )，则playerTurn = false，机器先下
+            lastMove = null;
+            playerTurn = !AI_FIRST;
+            
             if (AI_FIRST) {
-                // 机器先手： 机器下白棋(2)，但棋盘还是空的，需要立即让AI下一手吗？ 等渲染结束后调用AI行动
                 turnText.innerText = '机器回合⚪';
             } else {
                 turnText.innerText = '玩家回合⚫';
             }
             drawBoard();
-            // 如果机器先手，则触发AI下棋 (但需要等绘制完成，且非游戏结束)
+            
             if (AI_FIRST && !gameOver) {
-                setTimeout(() => machineMove(), 150); // 稍微延迟，让渲染与交互准备好
+                setTimeout(() => machineMove(), 200);
             }
         }
 
-        // ---------- 绘制棋盘 & 棋子 ----------
+        // ---------- 绘制棋盘 (包含最新手高亮) ----------
         function drawBoard() {
-            const dim = canvas.width; // 正方形
+            const dim = canvas.width;
             ctx.clearRect(0, 0, dim, dim);
             
-            // 画棋盘线
             const margin = Math.floor(dim * 0.06);
             const maxPos = dim - margin;
             gridSize = (maxPos - margin) / (BOARD_SIZE - 1);
             offset = margin;
             
-            // 背景色木质
             ctx.fillStyle = '#e8cfaa';
             ctx.fillRect(0, 0, dim, dim);
             
-            // 绘制网格线
             ctx.lineWidth = 1.8;
             ctx.strokeStyle = '#5f4c3b';
-            // 垂直线
             for (let i = 0; i < BOARD_SIZE; i++) {
                 const x = offset + i * gridSize;
                 ctx.beginPath();
@@ -248,7 +295,6 @@
                 ctx.lineTo(x, offset + (BOARD_SIZE-1) * gridSize);
                 ctx.stroke();
             }
-            // 水平线
             for (let i = 0; i < BOARD_SIZE; i++) {
                 const y = offset + i * gridSize;
                 ctx.beginPath();
@@ -257,8 +303,8 @@
                 ctx.stroke();
             }
             
-            // 画星位 (天元/小目)
-            const starPoints = [3, 7, 11]; // 五子棋常见星位: 3,7,11  (0-based 索引 3,7,11)
+            // 画星位
+            const starPoints = [3, 7, 11];
             ctx.fillStyle = '#5f4c3b';
             for (let r of starPoints) {
                 for (let c of starPoints) {
@@ -267,7 +313,6 @@
                     ctx.fill();
                 }
             }
-            // 额外两侧星 (靠边星位 3-11, 11-3)
             ctx.beginPath();
             ctx.arc(offset + 3 * gridSize, offset + 11 * gridSize, gridSize*0.12, 0, 2*Math.PI);
             ctx.fill();
@@ -275,24 +320,24 @@
             ctx.arc(offset + 11 * gridSize, offset + 3 * gridSize, gridSize*0.12, 0, 2*Math.PI);
             ctx.fill();
             
-            // 画所有棋子
+            // 画棋子
             for (let row = 0; row < BOARD_SIZE; row++) {
                 for (let col = 0; col < BOARD_SIZE; col++) {
                     if (board[row][col] === 0) continue;
                     const x = offset + col * gridSize;
                     const y = offset + row * gridSize;
-                    // 阴影效果
+                    
                     ctx.shadowColor = '#00000055';
                     ctx.shadowBlur = 8;
                     ctx.shadowOffsetX = 2;
                     ctx.shadowOffsetY = 2;
                     
                     const gradient = ctx.createRadialGradient(x-4, y-4, 3, x, y, gridSize*0.7);
-                    if (board[row][col] === 1) {  // 黑
+                    if (board[row][col] === 1) {
                         gradient.addColorStop(0, '#333');
                         gradient.addColorStop(0.7, '#111');
                         gradient.addColorStop(1, '#000');
-                    } else {  // 白
+                    } else {
                         gradient.addColorStop(0, '#fafafc');
                         gradient.addColorStop(0.5, '#ddd');
                         gradient.addColorStop(1, '#aaa');
@@ -301,7 +346,7 @@
                     ctx.arc(x, y, gridSize * 0.42, 0, 2 * Math.PI);
                     ctx.fillStyle = gradient;
                     ctx.fill();
-                    // 高光
+                    
                     ctx.shadowBlur = 2;
                     ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
                     ctx.beginPath();
@@ -310,23 +355,48 @@
                     ctx.fill();
                 }
             }
-            ctx.shadowColor = 'transparent'; // 关掉阴影避免影响后续
+            
+            // 绘制最新手高亮（红色外圈）
+            if (lastMove) {
+                const [row, col] = lastMove;
+                if (board[row] && board[row][col] !== 0) {
+                    const x = offset + col * gridSize;
+                    const y = offset + row * gridSize;
+                    ctx.shadowColor = '#ff0000aa';
+                    ctx.shadowBlur = 14;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    ctx.beginPath();
+                    ctx.arc(x, y, gridSize * 0.5, 0, 2 * Math.PI);
+                    ctx.strokeStyle = '#ff3333';
+                    ctx.lineWidth = gridSize * 0.13;
+                    ctx.stroke();
+                    
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#ffaa00';
+                    ctx.beginPath();
+                    ctx.arc(x, y, gridSize * 0.44, 0, 2 * Math.PI);
+                    ctx.strokeStyle = '#ffff80';
+                    ctx.lineWidth = gridSize * 0.06;
+                    ctx.stroke();
+                }
+            }
+            
+            ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
         }
 
-        // ---------- 检查五子连线 (赢家) ----------
+        // ---------- 检查五子连线 ----------
         function checkWinner(row, col, color) {
             if (!color) return false;
             const directions = [[1,0],[0,1],[1,1],[1,-1]];
             for (let [dx, dy] of directions) {
                 let count = 1;
-                // 正方向
                 for (let step = 1; step < 5; step++) {
                     const nr = row + dx * step, nc = col + dy * step;
                     if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== color) break;
                     count++;
                 }
-                // 反方向
                 for (let step = 1; step < 5; step++) {
                     const nr = row - dx * step, nc = col - dy * step;
                     if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== color) break;
@@ -337,7 +407,6 @@
             return false;
         }
 
-        // ---------- 检查棋盘是否已满 (平局) ----------
         function isBoardFull() {
             for (let row of board) {
                 if (row.includes(0)) return false;
@@ -345,7 +414,6 @@
             return true;
         }
 
-        // ---------- 游戏结束处理 ----------
         function handleGameOver(winner) {
             gameOver = true;
             if (winner === 1) turnText.innerText = '🏆 玩家胜！';
@@ -353,16 +421,58 @@
             else turnText.innerText = '🤝 平局';
         }
 
+        // 新增：精确计算触摸点对应的行列，增加容差和最近点吸附
+        function getClosestIntersection(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            // 计算在canvas坐标系中的位置
+            const canvasX = (clientX - rect.left) * scaleX;
+            const canvasY = (clientY - rect.top) * scaleY;
+            
+            // 棋盘边界范围（带容差）
+            const minBound = offset - gridSize * 0.4;
+            const maxBound = offset + (BOARD_SIZE - 1) * gridSize + gridSize * 0.4;
+            
+            if (canvasX < minBound || canvasX > maxBound || canvasY < minBound || canvasY > maxBound) {
+                return null; // 超出触摸容差范围
+            }
+            
+            // 计算理论行列
+            const colFloat = (canvasX - offset) / gridSize;
+            const rowFloat = (canvasY - offset) / gridSize;
+            
+            // 四舍五入到最近交叉点
+            let col = Math.round(colFloat);
+            let row = Math.round(rowFloat);
+            
+            // 边界保护
+            col = Math.max(0, Math.min(BOARD_SIZE - 1, col));
+            row = Math.max(0, Math.min(BOARD_SIZE - 1, row));
+            
+            // 二次验证：距离不能超过格子半径的0.6倍（避免点到格子中间空隙误触）
+            const actualX = offset + col * gridSize;
+            const actualY = offset + row * gridSize;
+            const dist = Math.hypot(canvasX - actualX, canvasY - actualY);
+            
+            // 如果物理距离超过格子半径的0.7倍，认为是无效点击（防止斜着点偏太远）
+            if (dist > gridSize * 0.7) {
+                return null;
+            }
+            
+            return { row, col };
+        }
+
         // ---------- 玩家落子 ----------
         function playerMove(row, col) {
             if (!playerTurn || gameOver) return false;
             if (board[row][col] !== 0) return false;
             
-            // 落子
-            board[row][col] = playerColor; // 1
+            board[row][col] = playerColor;
+            lastMove = [row, col];
             drawBoard();
             
-            // 检查胜利
             if (checkWinner(row, col, playerColor)) {
                 handleGameOver(1);
                 return true;
@@ -371,21 +481,17 @@
                 return true;
             }
             
-            // 切换回合给AI
             playerTurn = false;
             turnText.innerText = '机器回合⚪';
-            
-            // 启动AI (短暂延迟，避免阻塞点击事件)
             setTimeout(() => machineMove(), 200);
             return true;
         }
 
-        // ---------- 机器AI (中等智能) 这里实现一个简单但有效的启发式AI---------- 
+        // ---------- 机器AI (同上，保持不变) ----------
         function machineMove() {
             if (gameOver) return;
-            if (playerTurn) return; // 防止乱入
+            if (playerTurn) return;
             
-            // 收集空位
             let empty = [];
             for (let i=0; i<BOARD_SIZE; i++) {
                 for (let j=0; j<BOARD_SIZE; j++) {
@@ -393,23 +499,18 @@
                 }
             }
             if (empty.length === 0) {
-                // 平局
                 handleGameOver(0);
                 return;
             }
             
-            // 简单但有一定棋力的打分: 进攻(白)和防守(黑)结合。AI执白，既要最大化自己连子，也要阻碍黑棋
             let bestScore = -1;
             let bestMoves = [];
             
             for (let [r, c] of empty) {
                 let score = 0;
-                // 进攻分 (对白方)
-                score += evaluatePosition(r, c, aiColor) * 1.5;  // 进攻系数1.5
-                // 防守分 (对玩家黑方)  * 1.2 防守倾向
+                score += evaluatePosition(r, c, aiColor) * 1.5;
                 score += evaluatePosition(r, c, playerColor) * 1.2;
                 
-                // 轻微中心偏好 (增加初期稳定性)
                 const center = 7;
                 const dist = Math.abs(r-center) + Math.abs(c-center);
                 score += (BOARD_SIZE*2 - dist) * 1.5;
@@ -423,11 +524,10 @@
             }
             
             if (bestMoves.length === 0) return; 
-            // 随机选一个最佳(防止固定走法)
             const [aiRow, aiCol] = bestMoves[Math.floor(Math.random() * bestMoves.length)];
             
-            // 执行AI落子
-            board[aiRow][aiCol] = aiColor; // 2
+            board[aiRow][aiCol] = aiColor;
+            lastMove = [aiRow, aiCol];
             drawBoard();
             
             if (checkWinner(aiRow, aiCol, aiColor)) {
@@ -438,43 +538,39 @@
                 return;
             }
             
-            // 交还玩家
             playerTurn = true;
             turnText.innerText = '玩家回合⚫';
         }
 
-        // 评估在某位置放置某颜色的潜在得分 (基于方向计数)
         function evaluatePosition(row, col, color) {
             let totalScore = 0;
             const dirs = [[1,0],[0,1],[1,1],[1,-1]];
             
             for (let [dx, dy] of dirs) {
-                let count = 1; // 假设下了棋子
-                // 正方向
+                let count = 1;
                 let openLeft = 0, openRight = 0;
                 for (let step = 1; step < 5; step++) {
                     const nr = row + dx * step, nc = col + dy * step;
                     if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
                     if (board[nr][nc] === color) count++;
-                    else if (board[nr][nc] === 0) { openRight++; break; } // 遇到空停止计数但计入开放度?
-                    else break; // 对方棋子阻挡
+                    else if (board[nr][nc] === 0) { openRight++; break; }
+                    else break;
                 }
                 for (let step = 1; step < 5; step++) {
                     const nr = row - dx * step, nc = col - dy * step;
                     if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
                     if (board[nr][nc] === color) count++;
-                    else if (board[nr][nc] === 0) { openLeft++; break; } 
+                    else if (board[nr][nc] === 0) { openLeft++; break; }
                     else break;
                 }
-                // 简单计分: 连续的棋子越多分越高, 同时开放度略微奖励 (活二、活三)
-                if (count >= 5) totalScore += 10000;  // 直接获胜位置
+                if (count >= 5) totalScore += 10000;
                 else if (count === 4) {
-                    if (openLeft > 0 || openRight > 0) totalScore += 3000;  // 活四
-                    else totalScore += 1000;  // 冲四
+                    if (openLeft > 0 || openRight > 0) totalScore += 3000;
+                    else totalScore += 1000;
                 }
                 else if (count === 3) {
-                    if (openLeft > 0 && openRight > 0) totalScore += 600;   // 活三
-                    else if (openLeft > 0 || openRight > 0) totalScore += 200; // 眠三/冲三
+                    if (openLeft > 0 && openRight > 0) totalScore += 600;
+                    else if (openLeft > 0 || openRight > 0) totalScore += 200;
                 }
                 else if (count === 2) {
                     if (openLeft > 0 && openRight > 0) totalScore += 80;
@@ -485,19 +581,11 @@
             return totalScore;
         }
 
-        // ---------- 画布点击/触摸事件 转换为棋盘行列 ----------
+        // ---------- 触摸/点击处理 (精确优化版) ----------
         function handleCanvasTap(e) {
-            e.preventDefault(); // 阻止默认滚动
-            if (gameOver) return;
-            if (!playerTurn) {
-                alert('现在是机器回合，请稍候');
-                return;
-            }
+            e.preventDefault();
             
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;   // canvas物理像素比
-            const scaleY = canvas.height / rect.height;
-            
+            // 显示触摸反馈
             let clientX, clientY;
             if (e.touches) {
                 clientX = e.touches[0].clientX;
@@ -506,24 +594,18 @@
                 clientX = e.clientX;
                 clientY = e.clientY;
             }
+            showTouchFeedback(clientX, clientY);
             
-            // 计算canvas画布上的坐标 (px)
-            const canvasX = (clientX - rect.left) * scaleX;
-            const canvasY = (clientY - rect.top) * scaleY;
-            
-            // 映射到格子
-            const margin = offset;
-            if (canvasX < margin - gridSize/2 || canvasX > margin + (BOARD_SIZE-1)*gridSize + gridSize/2 ||
-                canvasY < margin - gridSize/2 || canvasY > margin + (BOARD_SIZE-1)*gridSize + gridSize/2) {
-                return; // 超出棋盘
+            if (gameOver) return;
+            if (!playerTurn) {
+                // 可选的轻微提示
+                return;
             }
             
-            // 计算最近的交叉点
-            const col = Math.round((canvasX - margin) / gridSize);
-            const row = Math.round((canvasY - margin) / gridSize);
-            if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
-            
-            playerMove(row, col);
+            const intersection = getClosestIntersection(clientX, clientY);
+            if (intersection) {
+                playerMove(intersection.row, intersection.col);
+            }
         }
 
         // ---------- 切换先手 ----------
@@ -531,21 +613,23 @@
             AI_FIRST = isAIFirst;
             btnPlayerFirst.classList.toggle('selected', !AI_FIRST);
             btnAIFirst.classList.toggle('selected', AI_FIRST);
-            initBoard(); // 重置棋盘，并根据AI_FIRST决定谁先
+            initBoard();
         }
 
-        // ---------- 事件绑定 ----------
+        // 事件绑定 (同时支持鼠标和触摸)
         canvas.addEventListener('click', handleCanvasTap);
         canvas.addEventListener('touchstart', handleCanvasTap, { passive: false });
+        // 阻止touchmove防止页面滑动
+        canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
         btnPlayerFirst.addEventListener('click', () => setFirstPlayer(false));
         btnAIFirst.addEventListener('click', () => setFirstPlayer(true));
         restartBtn.addEventListener('click', () => initBoard());
 
-        // 初始化: 玩家先手
+        // 初始化
         initBoard();
 
-        // 响应窗口resize (重新绘制canvas尺寸适应)
+        // 窗口resize时重绘
         window.addEventListener('resize', () => { drawBoard(); });
     })();
 </script>
