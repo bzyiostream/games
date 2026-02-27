@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>五子棋 · 移动优化版</title>
+    <title>五子棋 · 大师级AI</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,7 +13,7 @@
         body {
             margin: 0;
             min-height: 100vh;
-            background: linear-gradient(145deg, #2b5a3a 0%, #1d3e2a 100%);
+            background: linear-gradient(145deg, #1a3b28 0%, #0f2b1c 100%);
             font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
             display: flex;
             justify-content: center;
@@ -127,7 +127,7 @@
             width: 100%;
             aspect-ratio: 1/1;
             margin: 8px 0 2px;
-            touch-action: none;  /* 禁止触摸滚动/缩放 */
+            touch-action: none;
         }
         canvas {
             display: block;
@@ -140,7 +140,6 @@
             cursor: pointer;
             touch-action: none;
         }
-        /* 触摸点反馈（移动端显示点击位置） */
         .touch-feedback {
             position: absolute;
             width: 44px;
@@ -170,7 +169,6 @@
             border-radius: 40px;
             box-shadow: inset 0 1px 5px #fad6a0;
         }
-        /* 移动端优化 */
         @media (max-width: 480px) {
             .game-container { padding: 10px; }
             .status-bar { font-size: 1.1rem; padding: 6px 10px; }
@@ -192,33 +190,31 @@
     <div class="game-panel">
         <div class="first-move-box" id="firstMoveBox">
             <button id="btnPlayerFirst" class="selected">🙋 我先手</button>
-            <button id="btnAIFirst">🤖 机器先手</button>
+            <button id="btnAIFirst">🤖 大师先手</button>
         </div>
     </div>
-    <!-- 棋盘canvas包装层，用于绝对定位触摸反馈 -->
     <div class="canvas-wrapper" id="canvasWrapper">
         <canvas id="gobanCanvas" width="550" height="550"></canvas>
         <div class="touch-feedback" id="touchFeedback"></div>
     </div>
     <div class="footer-note">
         <span>⚫ 黑先</span>
-        <span>🤖 AI·中阶</span>
+        <span>🤖 大师·深度搜索</span>
     </div>
 </div>
 
 <script>
     (function() {
         // ---------- 配置参数 ----------
-        const BOARD_SIZE = 15;           // 15x15 标准五子棋
-        let board = [];                  // 二维数组 0空 1黑(玩家) 2白(机器)
+        const BOARD_SIZE = 15;
+        let board = [];
         let gameOver = false;
-        let playerTurn = true;            // true = 玩家(黑棋)回合, false = 机器(白棋)回合
-        let playerColor = 1;              // 玩家永远执黑(1)
-        let aiColor = 2;                  // 机器永远执白(2)
-        let AI_FIRST = false;              // 默认玩家先手
+        let playerTurn = true;
+        let playerColor = 1;
+        let aiColor = 2;
+        let AI_FIRST = false;
         
-        // 记录最新落子位置
-        let lastMove = null;               
+        let lastMove = null;
 
         const canvas = document.getElementById('gobanCanvas');
         const ctx = canvas.getContext('2d');
@@ -229,51 +225,285 @@
         const wrapper = document.getElementById('canvasWrapper');
         const touchFeedback = document.getElementById('touchFeedback');
 
-        // 棋盘格点坐标缓存
         let gridSize = 0;
         let offset = 0;
 
-        // 显示触摸点反馈
-        function showTouchFeedback(clientX, clientY) {
-            const rect = wrapper.getBoundingClientRect();
-            // 计算相对于wrapper的比例位置
-            const relativeX = clientX - rect.left;
-            const relativeY = clientY - rect.top;
+        // ---------- 大师级AI：增强的棋型评估 + 深度2层搜索 ----------
+        // 棋型评分表 (基于颜色)
+        const SCORE = {
+            FIVE: 1000000,      // 连五
+            LIVE_FOUR: 100000,   // 活四
+            SLEEP_FOUR: 10000,   // 冲四
+            LIVE_THREE: 8000,    // 活三
+            SLEEP_THREE: 1500,   // 眠三
+            LIVE_TWO: 800,       // 活二
+            SLEEP_TWO: 200,      // 眠二
+            LIVE_ONE: 20,
+            SLEEP_ONE: 5
+        };
+
+        // 方向向量
+        const DIRS = [[1,0],[0,1],[1,1],[1,-1]];
+
+        // 评估单方向上的棋型
+        function evaluateDirection(board, r, c, color, dr, dc) {
+            let count = 1; // 当前棋子
+            let leftEmpty = 0, rightEmpty = 0;
+            let leftBlocked = false, rightBlocked = false;
             
-            // 边界检查，只在棋盘区域内显示
-            if (relativeX >= 0 && relativeX <= rect.width && relativeY >= 0 && relativeY <= rect.height) {
-                touchFeedback.style.left = relativeX + 'px';
-                touchFeedback.style.top = relativeY + 'px';
-                touchFeedback.style.opacity = '1';
-                
-                // 0.2秒后淡出
-                clearTimeout(window.feedbackTimer);
-                window.feedbackTimer = setTimeout(() => {
-                    touchFeedback.style.opacity = '0';
-                }, 200);
+            // 正方向
+            for (let step = 1; step < 5; step++) {
+                const nr = r + dr * step, nc = c + dc * step;
+                if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) {
+                    rightBlocked = true;
+                    break;
+                }
+                if (board[nr][nc] === color) {
+                    count++;
+                } else if (board[nr][nc] === 0) {
+                    rightEmpty++;
+                    break;
+                } else {
+                    rightBlocked = true;
+                    break;
+                }
+            }
+            
+            // 负方向
+            for (let step = 1; step < 5; step++) {
+                const nr = r - dr * step, nc = c - dc * step;
+                if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) {
+                    leftBlocked = true;
+                    break;
+                }
+                if (board[nr][nc] === color) {
+                    count++;
+                } else if (board[nr][nc] === 0) {
+                    leftEmpty++;
+                    break;
+                } else {
+                    leftBlocked = true;
+                    break;
+                }
+            }
+            
+            // 根据连续棋子数量和空位/阻挡情况返回分数
+            if (count >= 5) return SCORE.FIVE;
+            
+            // 活四: 四个连续且两边都空
+            if (count === 4) {
+                if (!leftBlocked && !rightBlocked && leftEmpty > 0 && rightEmpty > 0) return SCORE.LIVE_FOUR;
+                if ((!leftBlocked && leftEmpty > 0) || (!rightBlocked && rightEmpty > 0)) return SCORE.SLEEP_FOUR;
+            }
+            
+            // 活三: 三个连续且两边都空
+            if (count === 3) {
+                if (!leftBlocked && !rightBlocked && leftEmpty > 0 && rightEmpty > 0) return SCORE.LIVE_THREE;
+                if ((!leftBlocked && leftEmpty > 0) || (!rightBlocked && rightEmpty > 0)) return SCORE.SLEEP_THREE;
+            }
+            
+            // 活二
+            if (count === 2) {
+                if (!leftBlocked && !rightBlocked && leftEmpty > 0 && rightEmpty > 0) return SCORE.LIVE_TWO;
+                if ((!leftBlocked && leftEmpty > 0) || (!rightBlocked && rightEmpty > 0)) return SCORE.SLEEP_TWO;
+            }
+            
+            // 活一
+            if (count === 1) {
+                if (!leftBlocked && !rightBlocked && leftEmpty > 0 && rightEmpty > 0) return SCORE.LIVE_ONE;
+                if ((!leftBlocked && leftEmpty > 0) || (!rightBlocked && rightEmpty > 0)) return SCORE.SLEEP_ONE;
+            }
+            
+            return 0;
+        }
+
+        // 评估整个棋盘上某个颜色的总分数 (用于启发)
+        function evaluateColor(board, color) {
+            let total = 0;
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (board[r][c] !== color) continue;
+                    for (let d of DIRS) {
+                        total += evaluateDirection(board, r, c, color, d[0], d[1]);
+                    }
+                }
+            }
+            return total;
+        }
+
+        // 评估某个空位如果下color能得到多少分 (快速启发)
+        function evaluateMove(board, r, c, color) {
+            if (board[r][c] !== 0) return 0;
+            let score = 0;
+            for (let d of DIRS) {
+                score += evaluateDirection(board, r, c, color, d[0], d[1]);
+            }
+            return score;
+        }
+
+        // 获取候选位置: 已有棋子的邻域(距离<=2)
+        function getCandidateMoves(board) {
+            const moves = [];
+            const used = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
+            
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (board[r][c] !== 0) {
+                        // 标记周围2格内
+                        for (let dr = -2; dr <= 2; dr++) {
+                            for (let dc = -2; dc <= 2; dc++) {
+                                const nr = r + dr, nc = c + dc;
+                                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] === 0 && !used[nr][nc]) {
+                                    used[nr][nc] = true;
+                                    moves.push([nr, nc]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 如果棋盘全空，返回中心点
+            if (moves.length === 0) {
+                moves.push([7, 7]);
+            }
+            return moves;
+        }
+
+        // 极小极大搜索 (深度2层: AI下->玩家下->评估)
+        function minimax(board, depth, maximizingPlayer) {
+            if (depth === 0) {
+                // 评估当前局面对AI的有利程度: AI分 - 玩家分
+                const aiScore = evaluateColor(board, aiColor);
+                const playerScore = evaluateColor(board, playerColor);
+                return aiScore - playerScore;
+            }
+            
+            const candidates = getCandidateMoves(board);
+            if (candidates.length === 0) return 0;
+            
+            if (maximizingPlayer) {
+                let maxEval = -Infinity;
+                for (let [r, c] of candidates) {
+                    if (board[r][c] !== 0) continue;
+                    board[r][c] = aiColor;
+                    const evalScore = minimax(board, depth - 1, false);
+                    board[r][c] = 0;
+                    maxEval = Math.max(maxEval, evalScore);
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (let [r, c] of candidates) {
+                    if (board[r][c] !== 0) continue;
+                    board[r][c] = playerColor;
+                    const evalScore = minimax(board, depth - 1, true);
+                    board[r][c] = 0;
+                    minEval = Math.min(minEval, evalScore);
+                }
+                return minEval;
             }
         }
 
-        // ---------- 初始化棋盘 ----------
-        function initBoard() {
-            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
-            gameOver = false;
-            lastMove = null;
-            playerTurn = !AI_FIRST;
+        // AI大师级下棋
+        function masterAIMove() {
+            if (gameOver) return;
+            if (playerTurn) return;
             
-            if (AI_FIRST) {
-                turnText.innerText = '机器回合⚪';
-            } else {
-                turnText.innerText = '玩家回合⚫';
+            const candidates = getCandidateMoves(board);
+            if (candidates.length === 0) {
+                handleGameOver(0);
+                return;
             }
+            
+            let bestScore = -Infinity;
+            let bestMoves = [];
+            
+            // 第一层：AI下棋
+            for (let [r, c] of candidates) {
+                if (board[r][c] !== 0) continue;
+                
+                // 启发式剪枝: 先快速算一下这个点的进攻+防守分，低于阈值的直接跳过（优化速度）
+                const quickScore = evaluateMove(board, r, c, aiColor) * 1.5 + evaluateMove(board, r, c, playerColor) * 1.2;
+                if (quickScore < 500 && candidates.length > 15) continue; // 粗略剪枝
+                
+                board[r][c] = aiColor;
+                
+                // 检查AI直接获胜
+                let win = false;
+                for (let d of DIRS) {
+                    if (evaluateDirection(board, r, c, aiColor, d[0], d[1]) >= SCORE.FIVE) {
+                        win = true;
+                        break;
+                    }
+                }
+                if (win) {
+                    board[r][c] = 0; // 恢复后记录
+                    bestMoves = [[r, c]];
+                    bestScore = SCORE.FIVE;
+                    break;
+                }
+                
+                // 深度2搜索 (玩家最佳应对)
+                const score = minimax(board, 1, false); // depth=1 相当于再搜索玩家一步
+                board[r][c] = 0;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMoves = [[r, c]];
+                } else if (Math.abs(score - bestScore) < 0.1) {
+                    bestMoves.push([r, c]);
+                }
+            }
+            
+            if (bestMoves.length === 0) {
+                // 保底：随便选一个
+                bestMoves = candidates;
+            }
+            
+            const [aiRow, aiCol] = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+            
+            board[aiRow][aiCol] = aiColor;
+            lastMove = [aiRow, aiCol];
             drawBoard();
             
-            if (AI_FIRST && !gameOver) {
-                setTimeout(() => machineMove(), 200);
+            if (checkWinner(aiRow, aiCol, aiColor)) {
+                handleGameOver(2);
+                return;
+            } else if (isBoardFull()) {
+                handleGameOver(0);
+                return;
             }
+            
+            playerTurn = true;
+            turnText.innerText = '玩家回合⚫';
         }
 
-        // ---------- 绘制棋盘 (包含最新手高亮) ----------
+        // 保持原有的检查胜利函数 (使用evaluateDirection辅助)
+        function checkWinner(row, col, color) {
+            for (let d of DIRS) {
+                if (evaluateDirection(board, row, col, color, d[0], d[1]) >= SCORE.FIVE) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isBoardFull() {
+            for (let row of board) {
+                if (row.includes(0)) return false;
+            }
+            return true;
+        }
+
+        function handleGameOver(winner) {
+            gameOver = true;
+            if (winner === 1) turnText.innerText = '🏆 玩家胜！';
+            else if (winner === 2) turnText.innerText = '🤖 大师胜！';
+            else turnText.innerText = '🤝 平局';
+        }
+
+        // ---------- 绘制函数 (不变) ----------
         function drawBoard() {
             const dim = canvas.width;
             ctx.clearRect(0, 0, dim, dim);
@@ -303,7 +533,6 @@
                 ctx.stroke();
             }
             
-            // 画星位
             const starPoints = [3, 7, 11];
             ctx.fillStyle = '#5f4c3b';
             for (let r of starPoints) {
@@ -320,7 +549,6 @@
             ctx.arc(offset + 11 * gridSize, offset + 3 * gridSize, gridSize*0.12, 0, 2*Math.PI);
             ctx.fill();
             
-            // 画棋子
             for (let row = 0; row < BOARD_SIZE; row++) {
                 for (let col = 0; col < BOARD_SIZE; col++) {
                     if (board[row][col] === 0) continue;
@@ -356,7 +584,6 @@
                 }
             }
             
-            // 绘制最新手高亮（红色外圈）
             if (lastMove) {
                 const [row, col] = lastMove;
                 if (board[row] && board[row][col] !== 0) {
@@ -386,85 +613,7 @@
             ctx.shadowBlur = 0;
         }
 
-        // ---------- 检查五子连线 ----------
-        function checkWinner(row, col, color) {
-            if (!color) return false;
-            const directions = [[1,0],[0,1],[1,1],[1,-1]];
-            for (let [dx, dy] of directions) {
-                let count = 1;
-                for (let step = 1; step < 5; step++) {
-                    const nr = row + dx * step, nc = col + dy * step;
-                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== color) break;
-                    count++;
-                }
-                for (let step = 1; step < 5; step++) {
-                    const nr = row - dx * step, nc = col - dy * step;
-                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || board[nr][nc] !== color) break;
-                    count++;
-                }
-                if (count >= 5) return true;
-            }
-            return false;
-        }
-
-        function isBoardFull() {
-            for (let row of board) {
-                if (row.includes(0)) return false;
-            }
-            return true;
-        }
-
-        function handleGameOver(winner) {
-            gameOver = true;
-            if (winner === 1) turnText.innerText = '🏆 玩家胜！';
-            else if (winner === 2) turnText.innerText = '🤖 机器胜！';
-            else turnText.innerText = '🤝 平局';
-        }
-
-        // 新增：精确计算触摸点对应的行列，增加容差和最近点吸附
-        function getClosestIntersection(clientX, clientY) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            
-            // 计算在canvas坐标系中的位置
-            const canvasX = (clientX - rect.left) * scaleX;
-            const canvasY = (clientY - rect.top) * scaleY;
-            
-            // 棋盘边界范围（带容差）
-            const minBound = offset - gridSize * 0.4;
-            const maxBound = offset + (BOARD_SIZE - 1) * gridSize + gridSize * 0.4;
-            
-            if (canvasX < minBound || canvasX > maxBound || canvasY < minBound || canvasY > maxBound) {
-                return null; // 超出触摸容差范围
-            }
-            
-            // 计算理论行列
-            const colFloat = (canvasX - offset) / gridSize;
-            const rowFloat = (canvasY - offset) / gridSize;
-            
-            // 四舍五入到最近交叉点
-            let col = Math.round(colFloat);
-            let row = Math.round(rowFloat);
-            
-            // 边界保护
-            col = Math.max(0, Math.min(BOARD_SIZE - 1, col));
-            row = Math.max(0, Math.min(BOARD_SIZE - 1, row));
-            
-            // 二次验证：距离不能超过格子半径的0.6倍（避免点到格子中间空隙误触）
-            const actualX = offset + col * gridSize;
-            const actualY = offset + row * gridSize;
-            const dist = Math.hypot(canvasX - actualX, canvasY - actualY);
-            
-            // 如果物理距离超过格子半径的0.7倍，认为是无效点击（防止斜着点偏太远）
-            if (dist > gridSize * 0.7) {
-                return null;
-            }
-            
-            return { row, col };
-        }
-
-        // ---------- 玩家落子 ----------
+        // ---------- 玩家操作 (不变) ----------
         function playerMove(row, col) {
             if (!playerTurn || gameOver) return false;
             if (board[row][col] !== 0) return false;
@@ -482,110 +631,65 @@
             }
             
             playerTurn = false;
-            turnText.innerText = '机器回合⚪';
-            setTimeout(() => machineMove(), 200);
+            turnText.innerText = '大师回合⚪';
+            setTimeout(() => masterAIMove(), 200);
             return true;
         }
 
-        // ---------- 机器AI (同上，保持不变) ----------
-        function machineMove() {
-            if (gameOver) return;
-            if (playerTurn) return;
+        // 触摸处理
+        function showTouchFeedback(clientX, clientY) {
+            const rect = wrapper.getBoundingClientRect();
+            const relativeX = clientX - rect.left;
+            const relativeY = clientY - rect.top;
             
-            let empty = [];
-            for (let i=0; i<BOARD_SIZE; i++) {
-                for (let j=0; j<BOARD_SIZE; j++) {
-                    if (board[i][j] === 0) empty.push([i, j]);
-                }
-            }
-            if (empty.length === 0) {
-                handleGameOver(0);
-                return;
-            }
-            
-            let bestScore = -1;
-            let bestMoves = [];
-            
-            for (let [r, c] of empty) {
-                let score = 0;
-                score += evaluatePosition(r, c, aiColor) * 1.5;
-                score += evaluatePosition(r, c, playerColor) * 1.2;
+            if (relativeX >= 0 && relativeX <= rect.width && relativeY >= 0 && relativeY <= rect.height) {
+                touchFeedback.style.left = relativeX + 'px';
+                touchFeedback.style.top = relativeY + 'px';
+                touchFeedback.style.opacity = '1';
                 
-                const center = 7;
-                const dist = Math.abs(r-center) + Math.abs(c-center);
-                score += (BOARD_SIZE*2 - dist) * 1.5;
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMoves = [[r, c]];
-                } else if (Math.abs(score - bestScore) < 0.001) {
-                    bestMoves.push([r, c]);
-                }
+                clearTimeout(window.feedbackTimer);
+                window.feedbackTimer = setTimeout(() => {
+                    touchFeedback.style.opacity = '0';
+                }, 200);
             }
-            
-            if (bestMoves.length === 0) return; 
-            const [aiRow, aiCol] = bestMoves[Math.floor(Math.random() * bestMoves.length)];
-            
-            board[aiRow][aiCol] = aiColor;
-            lastMove = [aiRow, aiCol];
-            drawBoard();
-            
-            if (checkWinner(aiRow, aiCol, aiColor)) {
-                handleGameOver(2);
-                return;
-            } else if (isBoardFull()) {
-                handleGameOver(0);
-                return;
-            }
-            
-            playerTurn = true;
-            turnText.innerText = '玩家回合⚫';
         }
 
-        function evaluatePosition(row, col, color) {
-            let totalScore = 0;
-            const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+        function getClosestIntersection(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
             
-            for (let [dx, dy] of dirs) {
-                let count = 1;
-                let openLeft = 0, openRight = 0;
-                for (let step = 1; step < 5; step++) {
-                    const nr = row + dx * step, nc = col + dy * step;
-                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
-                    if (board[nr][nc] === color) count++;
-                    else if (board[nr][nc] === 0) { openRight++; break; }
-                    else break;
-                }
-                for (let step = 1; step < 5; step++) {
-                    const nr = row - dx * step, nc = col - dy * step;
-                    if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) break;
-                    if (board[nr][nc] === color) count++;
-                    else if (board[nr][nc] === 0) { openLeft++; break; }
-                    else break;
-                }
-                if (count >= 5) totalScore += 10000;
-                else if (count === 4) {
-                    if (openLeft > 0 || openRight > 0) totalScore += 3000;
-                    else totalScore += 1000;
-                }
-                else if (count === 3) {
-                    if (openLeft > 0 && openRight > 0) totalScore += 600;
-                    else if (openLeft > 0 || openRight > 0) totalScore += 200;
-                }
-                else if (count === 2) {
-                    if (openLeft > 0 && openRight > 0) totalScore += 80;
-                    else if (openLeft > 0 || openRight > 0) totalScore += 20;
-                }
-                else if (count === 1) totalScore += 2;
+            const canvasX = (clientX - rect.left) * scaleX;
+            const canvasY = (clientY - rect.top) * scaleY;
+            
+            const minBound = offset - gridSize * 0.4;
+            const maxBound = offset + (BOARD_SIZE - 1) * gridSize + gridSize * 0.4;
+            
+            if (canvasX < minBound || canvasX > maxBound || canvasY < minBound || canvasY > maxBound) {
+                return null;
             }
-            return totalScore;
+            
+            const colFloat = (canvasX - offset) / gridSize;
+            const rowFloat = (canvasY - offset) / gridSize;
+            
+            let col = Math.round(colFloat);
+            let row = Math.round(rowFloat);
+            
+            col = Math.max(0, Math.min(BOARD_SIZE - 1, col));
+            row = Math.max(0, Math.min(BOARD_SIZE - 1, row));
+            
+            const actualX = offset + col * gridSize;
+            const actualY = offset + row * gridSize;
+            const dist = Math.hypot(canvasX - actualX, canvasY - actualY);
+            
+            if (dist > gridSize * 0.7) return null;
+            
+            return { row, col };
         }
 
-        // ---------- 触摸/点击处理 (精确优化版) ----------
         function handleCanvasTap(e) {
             e.preventDefault();
             
-            // 显示触摸反馈
             let clientX, clientY;
             if (e.touches) {
                 clientX = e.touches[0].clientX;
@@ -597,10 +701,7 @@
             showTouchFeedback(clientX, clientY);
             
             if (gameOver) return;
-            if (!playerTurn) {
-                // 可选的轻微提示
-                return;
-            }
+            if (!playerTurn) return;
             
             const intersection = getClosestIntersection(clientX, clientY);
             if (intersection) {
@@ -608,7 +709,6 @@
             }
         }
 
-        // ---------- 切换先手 ----------
         function setFirstPlayer(isAIFirst) {
             AI_FIRST = isAIFirst;
             btnPlayerFirst.classList.toggle('selected', !AI_FIRST);
@@ -616,20 +716,35 @@
             initBoard();
         }
 
-        // 事件绑定 (同时支持鼠标和触摸)
+        function initBoard() {
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+            gameOver = false;
+            lastMove = null;
+            playerTurn = !AI_FIRST;
+            
+            if (AI_FIRST) {
+                turnText.innerText = '大师回合⚪';
+            } else {
+                turnText.innerText = '玩家回合⚫';
+            }
+            drawBoard();
+            
+            if (AI_FIRST && !gameOver) {
+                setTimeout(() => masterAIMove(), 200);
+            }
+        }
+
+        // 事件绑定
         canvas.addEventListener('click', handleCanvasTap);
         canvas.addEventListener('touchstart', handleCanvasTap, { passive: false });
-        // 阻止touchmove防止页面滑动
         canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
         btnPlayerFirst.addEventListener('click', () => setFirstPlayer(false));
         btnAIFirst.addEventListener('click', () => setFirstPlayer(true));
         restartBtn.addEventListener('click', () => initBoard());
 
-        // 初始化
         initBoard();
 
-        // 窗口resize时重绘
         window.addEventListener('resize', () => { drawBoard(); });
     })();
 </script>
