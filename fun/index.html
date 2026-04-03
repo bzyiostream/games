@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>趣味学习游乐场 | 语文·英语游戏化记忆乐园</title>
+    <!-- 使用 Google Fonts 提升童趣感 -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 (免费图标库) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动文字影响游戏，但保留复制需求可选 */
+        }
+
+        body {
+            background: linear-gradient(145deg, #1e5a7d 0%, #0e3b54 100%);
+            font-family: 'Quicksand', 'Segoe UI', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* 主容器 */
+        .game-dashboard {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* 头部趣味标语 */
+        .hero {
+            background: rgba(255, 241, 184, 0.9);
+            border-radius: 60px;
+            padding: 15px 25px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+            backdrop-filter: blur(2px);
+        }
+        .hero h1 {
+            font-size: 2.2rem;
+            color: #ff7b2c;
+            text-shadow: 3px 3px 0 #ffd966;
+            letter-spacing: 2px;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e2f;
+        }
+
+        /* 网格布局 - 游戏卡片 */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+
+        /* 通用卡片样式 */
+        .game-card {
+            background: #fef9e8;
+            border-radius: 48px;
+            padding: 20px 20px 25px;
+            box-shadow: 0 20px 30px -8px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease;
+            border: 2px solid #ffe2a4;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 3px dashed #ffb347;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .card-header i {
+            font-size: 2.5rem;
+            color: #ff8c42;
+        }
+        .card-header h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4a2e1e;
+        }
+        .game-area {
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .btn {
+            border: none;
+            background: #ffcd94;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.1s linear;
+            box-shadow: 0 3px 0 #b97f2e;
+            color: #3b2a1f;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #b97f2e;
+        }
+        .btn-primary {
+            background: #5fa7f0;
+            box-shadow: 0 3px 0 #2c5282;
+            color: white;
+        }
+        .btn-success {
+            background: #6fbf4c;
+            box-shadow: 0 3px 0 #3c6e26;
+            color: white;
+        }
+        .feedback {
+            background: #fff2db;
+            padding: 12px;
+            border-radius: 28px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-left: 8px solid #ff9f4a;
+        }
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .word-chip {
+            background: #ffe0b5;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-weight: bold;
+        }
+        input, textarea {
+            border-radius: 40px;
+            border: 2px solid #f3cd81;
+            padding: 10px 15px;
+            font-family: inherit;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+        }
+        .score-board {
+            font-size: 1.2rem;
+            background: #f0c48b;
+            display: inline-block;
+            padding: 4px 15px;
+            border-radius: 30px;
+            margin-bottom: 8px;
+        }
+        hr {
+            margin: 8px 0;
+            border-color: #ffe0b5;
+        }
+        footer {
+            text-align: center;
+            color: #f9e0a0;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+        @media (max-width: 700px) {
+            .game-card { padding: 16px; }
+            .card-header h2 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-dashboard">
+    <div class="hero">
+        <h1><i class="fas fa-gamepad"></i> 记忆大冒险·游乐场 <i class="fas fa-dragon"></i></h1>
+        <p>⚡ 汉字警察 · 古诗拆弹 · 单词地牢 · 成语动物棋 ⚡</p>
+        <p style="font-size: 0.9rem;">🎉 玩着玩着就记住啦！ 每一个游戏都是魔法练习 🎉</p>
+    </div>
+
+    <div class="games-grid">
+        <!-- 游戏1：汉字警察（纠错字） -->
+        <div class="game-card">
+            <div class="card-header">
+                <i class="fas fa-user-shield"></i>
+                <h2>汉字警察 🚨</h2>
+            </div>
+            <div class="game-area">
+                <div><span class="score-board"><i class="fas fa-star"></i> 缉拿分数: <span id="hanziScore">0</span></span></div>
+                <div id="hanziQuestion" class="feedback">📜 今日案件：找出下面句子里的“错字通缉犯”！</div>
+                <div id="hanziSentence" style="font-size: 1.3rem; font-weight: bold; background: #fff0db; padding: 10px; border-radius: 30px; text-align: center;"></div>
+                <div class="btn-group">
+                    <input type="text" id="hanziInput" placeholder="输入正确汉字 (如: 已)" style="flex:2;">
+                    <button id="hanziCheckBtn" class="btn btn-primary">🔍 抓捕</button>
+                </div>
+                <button id="hanziNextBtn" class="btn">📢 下一案件</button>
+                <div class="feedback" id="hanziMsg">✨ 点击“下一案件”开始巡逻~</div>
+            </div>
+        </div>
+
+        <!-- 游戏2：古诗拆弹 (填空) -->
+        <div class="game-card">
+            <div class="card-header">
+                <i class="fas fa-bomb"></i>
+                <h2>古诗拆弹 💣</h2>
+            </div>
+            <div class="game-area">
+                <div><span class="score-board"><i class="fas fa-hourglass-half"></i> 拆弹成功: <span id="poetryScore">0</span></span></div>
+                <div id="poetryLine" class="feedback" style="font-size:1.2rem; font-weight:bold; text-align:center;"></div>
+                <div class="btn-group">
+                    <input type="text" id="poetryInput" placeholder="填入缺失的字/词" style="flex:2;">
+                    <button id="poetryCheckBtn" class="btn btn-primary">💣 剪断导线</button>
+                </div>
+                <button id="poetryNextBtn" class="btn">🔄 下一枚炸弹</button>
+                <div id="poetryMsg" class="feedback">✍️ 把正确的字填进空格，倒计时前拆弹！</div>
+            </div>
+        </div>
+
+        <!-- 游戏3：单词地牢 (拼写逃脱) -->
+        <div class="game-card">
+            <div class="card-header">
+                <i class="fas fa-dungeon"></i>
+                <h2>单词地牢 🧙</h2>
+            </div>
+            <div class="game-area">
+                <div><span class="score-board"><i class="fas fa-key"></i> 魔法钥匙: <span id="wordScore">0</span>/5</span></div>
+                <div id="wordPrompt" class="feedback">🔮 地牢守卫问: 请拼写单词 —— <strong id="wordMeaning">...</strong></div>
+                <input type="text" id="wordSpellInput" placeholder="输入英文单词">
+                <div class="btn-group">
+                    <button id="wordCheckBtn" class="btn btn-primary">🗝️ 施展咒语</button>
+                    <button id="wordNextBtn" class="btn">🔄 新的试炼</button>
+                </div>
+                <div id="wordMsg" class="feedback">⭐ 收集5把钥匙即可逃脱！</div>
+            </div>
+        </div>
+
+        <!-- 游戏4：成语动物棋 (情景配对) -->
+        <div class="game-card">
+            <div class="card-header">
+                <i class="fas fa-chess-board"></i>
+                <h2>成语动物棋 🐘</h2>
+            </div>
+            <div class="game-area">
+                <div><span class="score-board"><i class="fas fa-trophy"></i> 得分: <span id="idiomScore">0</span></span></div>
+                <div id="situationDesc" class="feedback" style="font-size:1.1rem;">🎲 点击「抽情境卡」</div>
+                <div class="btn-group">
+                    <button id="drawSituationBtn" class="btn">🎴 抽情境卡</button>
+                    <input type="text" id="idiomAnswer" placeholder="说出合适成语" style="flex:2;">
+                    <button id="idiomCheckBtn" class="btn btn-primary">✅ 挑战</button>
+                </div>
+                <button id="idiomNextBtn" class="btn">✨ 下一回合</button>
+                <div id="idiomMsg" class="feedback">🐉 根据情境说出正确成语，前进一格！</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 额外趣味接龙模块 (AI故事接龙风格) -->
+    <div class="game-card" style="background: #f9efcf;">
+        <div class="card-header">
+            <i class="fas fa-robot"></i>
+            <h2>✨ AI故事接龙 · 疯狂造句 ✨</h2>
+        </div>
+        <div class="game-area">
+            <div class="feedback"><i class="fas fa-lightbulb"></i> 把本周新学的词语编成离奇故事！记忆效果翻倍~</div>
+            <div class="word-list" id="storyWordsDisplay">📖 当前词库：熊猫, 火箭, 悲伤, 因为, 超市</div>
+            <textarea id="storyInput" rows="2" placeholder="用上面所有词语编一句话或小故事..."></textarea>
+            <div class="btn-group">
+                <button id="submitStoryBtn" class="btn btn-success"><i class="fas fa-feather-alt"></i> 发表传奇故事</button>
+                <button id="randomWordsBtn" class="btn">🎲 随机换词</button>
+            </div>
+            <div id="storyFeedback" class="feedback">🐣 试试看！把词语串成疯狂故事～ 越离谱记得越牢！</div>
+        </div>
+    </div>
+    <footer>⭐ 游戏化学习 | 快乐记忆法 | 每天玩10分钟 变身记忆超人 ⭐</footer>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // 1. 汉字警察 数据库 (错句/正确字)
+    const hanziCases = [
+        { sentence: "我今天非长开心。", correct: "常", hint: "'非长' 应该是？" },
+        { sentence: "教室的桌字很干净。", correct: "子", hint: "桌子的 '子'" },
+        { sentence: "同学们在草平上奔跑。", correct: "坪", hint: "草坪的坪" },
+        { sentence: "妈妈做的蛋羔很香。", correct: "糕", hint: "蛋糕" },
+        { sentence: "我己经写完作业了。", correct: "已", hint: "已经的已" }
+    ];
+    let currentHanziIndex = 0;
+    let hanziScore = 0;
+    function loadHanziCase() {
+        const c = hanziCases[currentHanziIndex];
+        document.getElementById("hanziSentence").innerHTML = `“${c.sentence}”`;
+        document.getElementById("hanziInput").value = "";
+        document.getElementById("hanziMsg").innerHTML = "🔎 找出错字并输入正确的汉字！";
+    }
+    document.getElementById("hanziCheckBtn").onclick = () => {
+        const userAnswer = document.getElementById("hanziInput").value.trim();
+        const correctAns = hanziCases[currentHanziIndex].correct;
+        if(userAnswer === correctAns) {
+            hanziScore++;
+            document.getElementById("hanziScore").innerText = hanziScore;
+            document.getElementById("hanziMsg").innerHTML = "✅ 逮捕成功！ +1分！ 错字现形！";
+        } else {
+            document.getElementById("hanziMsg").innerHTML = `❌ 抓错了... 正确答案是“${correctAns}”。 再试试下一案件！`;
+        }
+    };
+    document.getElementById("hanziNextBtn").onclick = () => {
+        currentHanziIndex = (currentHanziIndex + 1) % hanziCases.length;
+        loadHanziCase();
+        document.getElementById("hanziMsg").innerHTML = "🕵️ 新案件！找出错字并输入正确汉字~";
+    };
+    loadHanziCase();
+
+    // --------------------------------------------------------------
+    // 2. 古诗拆弹 (挖空填空)
+    const poems = [
+        { line: "床前____光，疑是地上霜。", answer: "明", full: "床前明月光" },
+        { line: "野火烧不尽，春风吹又____。", answer: "生", full: "春风吹又生" },
+        { line: "小时不识月，呼作白玉____。", answer: "盘", full: "呼作白玉盘" },
+        { line: "锄____日当午，汗滴禾下土。", answer: "禾", full: "锄禾日当午" },
+        { line: "窗含西岭____秋雪，门泊东吴万里船。", answer: "千", full: "窗含西岭千秋雪" }
+    ];
+    let poetryIdx = 0;
+    let poetryScoreVal = 0;
+    function loadPoetry() {
+        document.getElementById("poetryLine").innerHTML = poems[poetryIdx].line;
+        document.getElementById("poetryInput").value = "";
+        document.getElementById("poetryMsg").innerHTML = "⏳ 填出空缺处，阻止炸弹爆炸！";
+    }
+    document.getElementById("poetryCheckBtn").onclick = () => {
+        let userAns = document.getElementById("poetryInput").value.trim();
+        let correctAns = poems[poetryIdx].answer;
+        if(userAns === correctAns) {
+            poetryScoreVal++;
+            document.getElementById("poetryScore").innerText = poetryScoreVal;
+            document.getElementById("poetryMsg").innerHTML = "💥 拆弹成功！ +1 学识值！";
+        } else {
+            document.getElementById("poetryMsg").innerHTML = `💣 爆炸啦！ 正确答案是“${correctAns}”。 学习一下：${poems[poetryIdx].full}`;
+        }
+    };
+    document.getElementById("poetryNextBtn").onclick = () => {
+        poetryIdx = (poetryIdx + 1) % poems.length;
+        loadPoetry();
+    };
+    loadPoetry();
+
+    // --------------------------------------------------------------
+    // 3. 单词地牢 (中译英拼写)
+    const wordBank = [
+        { meaning: "苹果", word: "apple" },
+        { meaning: "快乐的", word: "happy" },
+        { meaning: "老师", word: "teacher" },
+        { meaning: "朋友", word: "friend" },
+        { meaning: "美丽的", word: "beautiful" },
+        { meaning: "猫", word: "cat" },
+        { meaning: "狗", word: "dog" },
+        { meaning: "学校", word: "school" }
+    ];
+    let currentWordObj = { meaning: "苹果", word: "apple" };
+    let wordScoreCount = 0;
+    let wordAttempted = false;
+    function pickRandomWord() {
+        const rand = Math.floor(Math.random() * wordBank.length);
+        currentWordObj = { ...wordBank[rand] };
+        document.getElementById("wordMeaning").innerText = currentWordObj.meaning;
+        document.getElementById("wordSpellInput").value = "";
+        document.getElementById("wordMsg").innerHTML = "🔊 输入英文拼写，获得魔法钥匙!";
+        wordAttempted = false;
+    }
+    function updateWordScoreUI() {
+        document.getElementById("wordScore").innerText = wordScoreCount;
+        if(wordScoreCount >= 5) {
+            document.getElementById("wordMsg").innerHTML = "🎉✨ 恭喜逃脱地牢！获得荣誉勋章！ ✨🎉 继续攒钥匙吧！";
+        }
+    }
+    document.getElementById("wordCheckBtn").onclick = () => {
+        if(wordScoreCount >= 5) {
+            document.getElementById("wordMsg").innerHTML = "🏆 已经是自由之身啦！点击下一试炼继续挑战！";
+            return;
+        }
+        let userSpell = document.getElementById("wordSpellInput").value.trim().toLowerCase();
+        if(userSpell === currentWordObj.word) {
+            wordScoreCount++;
+            updateWordScoreUI();
+            document.getElementById("wordMsg").innerHTML = `🔑 咒语正确！获得钥匙！ (${wordScoreCount}/5)`;
+            pickRandomWord(); // 换新单词继续挑战
+        } else {
+            document.getElementById("wordMsg").innerHTML = `❌ 咒语失败... “${currentWordObj.meaning}”的正确拼写是 ${currentWordObj.word}，再试下一个单词吧～`;
+            pickRandomWord();
+        }
+    };
+    document.getElementById("wordNextBtn").onclick = () => {
+        pickRandomWord();
+    };
+    pickRandomWord();
+
+    // --------------------------------------------------------------
+    // 4. 成语动物棋 (情景匹配)
+    const idiomSituations = [
+        { situation: "考试得了第一名，心里特别开心。", idiom: "兴高采烈" },
+        { situation: "看到别人有漂亮的玩具，自己也很想要。", idiom: "羡慕不已" },
+        { situation: "上课非常认真，一点都不走神。", idiom: "全神贯注" },
+        { situation: "运动会上跑得飞快，像风一样。", idiom: "健步如飞" },
+        { situation: "大家团结一致，力量很大。", idiom: "齐心协力" },
+        { situation: "读书读得忘记了吃饭和睡觉。", idiom: "废寝忘食" }
+    ];
+    let currentSitIdx = 0;
+    let idiomScoreVal = 0;
+    function loadRandomSituation() {
+        const rand = Math.floor(Math.random() * idiomSituations.length);
+        currentSitIdx = rand;
+        document.getElementById("situationDesc").innerHTML = `🎭 情境: ${idiomSituations[rand].situation}`;
+        document.getElementById("idiomAnswer").value = "";
+        document.getElementById("idiomMsg").innerHTML = "🤔 用哪个成语最贴切？";
+    }
+    document.getElementById("drawSituationBtn").onclick = () => {
+        loadRandomSituation();
+    };
+    document.getElementById("idiomCheckBtn").onclick = () => {
+        let userAns = document.getElementById("idiomAnswer").value.trim();
+        let correctAns = idiomSituations[currentSitIdx].idiom;
+        if(userAns === correctAns) {
+            idiomScoreVal++;
+            document.getElementById("idiomScore").innerText = idiomScoreVal;
+            document.getElementById("idiomMsg").innerHTML = `🐘 正确！成语大师！ +1分 (${correctAns})`;
+            loadRandomSituation(); // 自动刷新新情境
+        } else {
+            document.getElementById("idiomMsg").innerHTML = `❌ 不对哦～ 这个情境更适合成语“${correctAns}”。再试试看！`;
+        }
+    };
+    document.getElementById("idiomNextBtn").onclick = () => {
+        loadRandomSituation();
+    };
+    loadRandomSituation();
+
+    // --------------------------------------------------------------
+    // 额外故事接龙 灵活词库
+    let currentStoryWords = ["熊猫", "火箭", "悲伤", "因为", "超市"];
+    function updateStoryWordDisplay() {
+        document.getElementById("storyWordsDisplay").innerHTML = `📖 当前词库：${currentStoryWords.join(", ")}`;
+    }
+    document.getElementById("submitStoryBtn").onclick = () => {
+        let story = document.getElementById("storyInput").value.trim();
+        if(story === "") {
+            document.getElementById("storyFeedback").innerHTML = "💡 编写一个包含所有词语的小故事吧！越有趣记忆越深刻～";
+            return;
+        }
+        // 检查是否包含全部词语
+        let allIncluded = currentStoryWords.every(word => story.includes(word));
+        if(allIncluded) {
+            document.getElementById("storyFeedback").innerHTML = "🎉 太棒啦！故事大王！这些词语已经钻进你的长期记忆区啦！ 🧠✨";
+        } else {
+            let missing = currentStoryWords.filter(w => !story.includes(w));
+            document.getElementById("storyFeedback").innerHTML = `📖 故事很精彩！但是还缺少词语: ${missing.join(", ")}。再试试加入它们，编得更疯狂！`;
+        }
+    };
+    document.getElementById("randomWordsBtn").onclick = () => {
+        const wordPool = ["宇宙", "冰淇淋", "魔法师", "哭泣", "操场", "恐龙", "秘密", "彩虹", "作业", "梦想"];
+        const newSet = [];
+        for(let i=0; i<5; i++) {
+            let randWord = wordPool[Math.floor(Math.random() * wordPool.length)];
+            if(!newSet.includes(randWord)) newSet.push(randWord);
+            if(newSet.length === 5) break;
+        }
+        while(newSet.length < 5) newSet.push("欢乐");
+        currentStoryWords = newSet;
+        updateStoryWordDisplay();
+        document.getElementById("storyFeedback").innerHTML = "🔄 新词库已加载！快创造一个疯狂接龙故事吧～";
+        document.getElementById("storyInput").value = "";
+    };
+    updateStoryWordDisplay();
+
+    // 增加额外彩蛋: 所有游戏积分趣味提醒 (无竞争压力)
+    function addConfettiEffect() {
+        // 简单视觉彩蛋 - 在某个高分时提醒 不作复杂实现 仅控制台友好
+        console.log("继续赢取记忆勋章!");
+    }
+    // 监听各分数 达到阈值弹个小趣味
+    const observerScore = () => {
+        let total = parseInt(document.getElementById("hanziScore").innerText) + parseInt(document.getElementById("poetryScore").innerText) + parseInt(document.getElementById("wordScore").innerText) + parseInt(document.getElementById("idiomScore").innerText);
+        if(total >= 15) {
+            let msgDiv = document.createElement("div");
+            msgDiv.style.position = "fixed";
+            msgDiv.style.bottom = "20px";
+            msgDiv.style.right = "20px";
+            msgDiv.style.backgroundColor = "#ffd966";
+            msgDiv.style.padding = "12px 20px";
+            msgDiv.style.borderRadius = "40px";
+            msgDiv.style.fontWeight = "bold";
+            msgDiv.style.boxShadow = "0 5px 15px black";
+            msgDiv.innerHTML = "🏅 记忆超人成就！太厉害了！ 🏅";
+            document.body.appendChild(msgDiv);
+            setTimeout(() => msgDiv.remove(), 3000);
+        }
+    };
+    setInterval(observerScore, 800);
+</script>
+</body>
+</html>
