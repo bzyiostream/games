@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>24点小游戏 | 随机4个位数加减乘除等于24</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 游戏主面板 */
+        .game-container {
+            max-width: 650px;
+            width: 100%;
+            background: rgba(255, 248, 225, 0.95);
+            border-radius: 70px 70px 60px 60px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255,255,240,0.8);
+            overflow: hidden;
+            backdrop-filter: blur(1px);
+            transition: all 0.2s;
+        }
+
+        /* 头部与数字卡片 */
+        .header {
+            background: #f9e7c2;
+            padding: 20px 20px 10px 20px;
+            text-align: center;
+            border-bottom: 3px solid #d4a373;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            color: #5e2e1c;
+            text-shadow: 2px 2px 0 #ffd966;
+            font-weight: 800;
+        }
+
+        .sub {
+            font-size: 0.8rem;
+            color: #7f5539;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* 数字四兄弟 */
+        .numbers-area {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            gap: 18px;
+            padding: 40px 25px;
+            background: #fff5e8;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: #fef9e6;
+            width: 100px;
+            height: 120px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4.5rem;
+            font-weight: 800;
+            font-family: 'Courier New', 'Segoe UI', monospace;
+            color: #3b2a1f;
+            box-shadow: 8px 8px 16px rgba(0,0,0,0.1), -4px -4px 12px rgba(255,255,220,0.8);
+            background: radial-gradient(circle at 30% 25%, #fff6e8, #ffe6c7);
+            transition: transform 0.2s ease;
+            border: 1px solid #efcf9e;
+        }
+
+        .card span {
+            transform: scale(1);
+            display: inline-block;
+        }
+
+        /* 控制区 */
+        .controls {
+            padding: 10px 20px 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            background: #fff5e8;
+        }
+
+        button {
+            background: #e9b35f;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-family: inherit;
+            color: #2d3e2b;
+            cursor: pointer;
+            transition: 0.15s linear;
+            box-shadow: 0 5px 0 #a4652b;
+            letter-spacing: 1px;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #a4652b;
+        }
+
+        .btn-hint {
+            background: #5f7b4b;
+            color: #fef2cf;
+            box-shadow: 0 5px 0 #3b5530;
+        }
+
+        .btn-new {
+            background: #c97e5a;
+            color: #fff0db;
+            box-shadow: 0 5px 0 #8e4e32;
+        }
+
+        /* 输入&验证区 */
+        .expression-area {
+            background: #e9ddce;
+            padding: 15px 25px 25px;
+            border-radius: 40px 40px 30px 30px;
+            margin: 0 20px 25px 20px;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.1), 0 6px 10px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #userExpr {
+            flex: 3;
+            min-width: 180px;
+            padding: 14px 20px;
+            font-size: 1.3rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            text-align: center;
+            background: #fffef7;
+            border: 2px solid #ccaa7b;
+            border-radius: 60px;
+            outline: none;
+            color: #2c2b26;
+            letter-spacing: 1px;
+        }
+
+        #checkBtn {
+            flex: 1;
+            background: #5f9e6e;
+            box-shadow: 0 5px 0 #2f6a3d;
+            font-size: 1.2rem;
+            padding: 12px 20px;
+        }
+
+        .message {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 60px;
+            background: #f6efdf;
+            color: #5e3a22;
+        }
+
+        /* 提示面板 */
+        .hint-panel {
+            margin: 10px 20px 25px 20px;
+            background: #e5d5b3;
+            border-radius: 45px;
+            padding: 15px 20px;
+            transition: all 0.2s;
+        }
+
+        .hint-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 0 8px;
+        }
+
+        .hint-header span {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #4f3822;
+        }
+
+        #showHintBtn {
+            background: #b68b40;
+            box-shadow: 0 4px 0 #704e26;
+            font-size: 0.9rem;
+            padding: 6px 16px;
+        }
+
+        .hint-content {
+            background: #2d2418cc;
+            background: #fcf3e2;
+            border-radius: 35px;
+            padding: 14px 12px;
+            max-height: 220px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #352811;
+            border: 1px solid #e7ca96;
+        }
+
+        .hint-placeholder {
+            text-align: center;
+            color: #a07e56;
+            padding: 12px;
+            font-style: italic;
+        }
+
+        .solution-item {
+            padding: 6px 8px;
+            border-bottom: 1px dashed #dbbc87;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .solution-item:last-child {
+            border: none;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 12px;
+            background: #f0e2ce;
+            color: #8b6946;
+        }
+
+        @media (max-width: 520px) {
+            .card {
+                width: 70px;
+                height: 90px;
+                font-size: 3rem;
+            }
+            .numbers-area {
+                gap: 12px;
+                padding: 25px 15px;
+            }
+            button {
+                padding: 8px 16px;
+                font-size: 1rem;
+            }
+            #userExpr {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="header">
+        <h1>🎲 24点 · 巧算 🧮</h1>
+        <div class="sub">使用 + - × ÷ 及括号，组合四个个位数 = 24</div>
+    </div>
+
+    <div class="numbers-area" id="numbersArea">
+        <!-- 动态生成四个卡片 -->
+    </div>
+
+    <div class="controls">
+        <button class="btn-new" id="newGameBtn">✨ 新的一局 ✨</button>
+        <button class="btn-hint" id="showHintBtn">💡 查看所有可能提示</button>
+    </div>
+
+    <div class="expression-area">
+        <div class="input-group">
+            <input type="text" id="userExpr" placeholder="例如: (8-4)×(7-1) 或 6×4×(3-2)" autocomplete="off">
+            <button id="checkBtn">✓ 验证答案</button>
+        </div>
+        <div class="message" id="msgBox">✨ 输入算式，点击验证，看看是否等于24！</div>
+    </div>
+
+    <div class="hint-panel">
+        <div class="hint-header">
+            <span>📜 所有解法提示</span>
+            <!-- 这里不需要额外按钮，已经存在showHintBtn，也可以保留重新展示 -->
+        </div>
+        <div class="hint-content" id="hintContent">
+            <div class="hint-placeholder">点击「查看所有可能提示」显示算式列表</div>
+        </div>
+    </div>
+    <footer>⚠️ 使用数字恰好各一次，运算顺序自由，支持加减乘除与括号</footer>
+</div>
+
+<script>
+    // ---------- 24点核心算法：穷举所有可能表达式（数字可重排，运算符可重复，支持括号结构）--------
+    // 为了性能且覆盖所有组合（4个数字，最多4! * 4^3 * 5种二叉树结构 = 不多 约 7680种组合），完全OK。
+    // 由于数字允许重复，但我们要基于当前四个数字生成所有不同的算式（去重展示），但作为提示仅显示正确且等值于24的唯一表达式（字符串去重）。
+    
+    // 定义运算符集合
+    const OPERATORS = ['+', '-', '*', '/'];
+    
+    // 辅助：浮点数相等比较 (因为除法产生小数)
+    function isFloatEqual(a, b, eps = 1e-6) {
+        return Math.abs(a - b) < eps;
+    }
+    
+    // 计算表达式基础函数，处理加减乘除，并处理除零保护
+    function applyOperator(op, left, right) {
+        if (op === '+') return left + right;
+        if (op === '-') return left - right;
+        if (op === '*') return left * right;
+        if (op === '/') {
+            if (Math.abs(right) < 1e-8) return NaN; // 除零非法
+            return left / right;
+        }
+        return NaN;
+    }
+    
+    // 表达式节点类 (用于构建二叉树)
+    class ExprNode {
+        constructor(value, left = null, right = null, op = null) {
+            this.value = value;   // 如果是叶子节点，value为数字；否则为计算结果(动态)
+            this.left = left;
+            this.right = right;
+            this.op = op;
+        }
+        
+        // 生成标准字符串表示 (加括号以确保运算优先级)
+        toString() {
+            if (this.left === null && this.right === null) {
+                return `${this.value}`;
+            }
+            let leftStr = this.left.toString();
+            let rightStr = this.right.toString();
+            // 为了可读性，对于子表达式如果优先级低则加括号，简单起见对非叶子节点根据父运算加括号
+            // 这里为了输出清晰，统一给非顶层节点加上括号? 但要避免过冗余。使用安全括号策略：左右子表达式如果其op存在且优先级低于当前op则加括号。
+            // 其实只要生成合法算式就行，展示可读性高些，但用户输入支持括号，我们展示也带括号辅助。
+            // 优雅实现：
+            const needLeftParen = this.left && this.left.op && this.getPriority(this.op) > this.getPriority(this.left.op);
+            const needRightParen = this.right && this.right.op && this.getPriority(this.op) > this.getPriority(this.right.op);
+            // 减法和除法时右边特殊处理: 如果是减法且右op为加减，也需要括号？
+            if (this.op === '-' && this.right && this.right.op && (this.right.op === '+' || this.right.op === '-')) {
+                // 右边是加减需要括号保证 (a - (b+c))
+                return `${needLeftParen ? "("+leftStr+")" : leftStr} ${this.op} (${rightStr})`;
+            }
+            if (this.op === '/' && this.right && this.right.op) {
+                return `${needLeftParen ? "("+leftStr+")" : leftStr} ${this.op} (${rightStr})`;
+            }
+            return `${needLeftParen ? "("+leftStr+")" : leftStr} ${this.op} ${needRightParen ? "("+rightStr+")" : rightStr}`;
+        }
+        
+        getPriority(op) {
+            if (op === '+' || op === '-') return 1;
+            if (op === '*' || op === '/') return 2;
+            return 0;
+        }
+    }
+    
+    // 根据数字列表和运算符组合、树形结构构建表达式，递归枚举
+    // 思路：从数字数组和操作符数组生成所有可能的二叉树，计算值是否为24，并收集表达式字符串。
+    function findAllSolutions(nums) {
+        const solutionsSet = new Set(); // 去重表达式字符串
+        const n = nums.length;
+        if (n !== 4) return [];
+        
+        // 全排列数字（四个数字顺序可重排）
+        const permuteArr = (arr) => {
+            if (arr.length === 1) return [arr];
+            const result = [];
+            for (let i = 0; i < arr.length; i++) {
+                const rest = [...arr.slice(0, i), ...arr.slice(i+1)];
+                const perms = permuteArr(rest);
+                for (const perm of perms) {
+                    result.push([arr[i], ...perm]);
+                }
+            }
+            return result;
+        };
+        
+        const uniquePerms = [];
+        const seenPerm = new Set();
+        const allPerms = permuteArr(nums);
+        for (const perm of allPerms) {
+            const key = perm.join(',');
+            if (!seenPerm.has(key)) {
+                seenPerm.add(key);
+                uniquePerms.push(perm);
+            }
+        }
+        
+        // 所有运算符三元组 (4个数需要3个运算符)
+        const opCombos = [];
+        const ops = ['+', '-', '*', '/'];
+        for (let i = 0; i < ops.length; i++) {
+            for (let j = 0; j < ops.length; j++) {
+                for (let k = 0; k < ops.length; k++) {
+                    opCombos.push([ops[i], ops[j], ops[k]]);
+                }
+            }
+        }
+        
+        // 二叉树形态: 对于4个数字，有5种不同的括号结构 (二叉树形状)
+        // 我们用结构枚举: 用模式来表示 ((a,b),c),d  ; (a,(b,c)),d ; a,((b,c),d) ; a,(b,(c,d)) ; (a,b),(c,d)
+        // 方便构建 ExprNode
+        const buildTreeByShape = (numsArr, opsArr, shapeIdx) => {
+            // shapeIdx: 0->((ab)c)d ; 1->(a(bc))d ; 2->a((bc)d) ; 3->a(b(cd)) ; 4->(ab)(cd)
+            const [a,b,c,d] = numsArr;
+            const [op1, op2, op3] = opsArr;
+            try {
+                if (shapeIdx === 0) {
+                    // ((a op1 b) op2 c) op3 d
+                    const node1 = new ExprNode(null, new ExprNode(a), new ExprNode(b), op1);
+                    node1.value = applyOperator(op1, a, b);
+                    if (isNaN(node1.value)) return null;
+                    const node2 = new ExprNode(null, node1, new ExprNode(c), op2);
+                    node2.value = applyOperator(op2, node1.value, c);
+                    if (isNaN(node2.value)) return null;
+                    const root = new ExprNode(null, node2, new ExprNode(d), op3);
+                    root.value = applyOperator(op3, node2.value, d);
+                    if (isNaN(root.value)) return null;
+                    return root;
+                } else if (shapeIdx === 1) {
+                    // (a op1 (b op2 c)) op3 d
+                    const node1 = new ExprNode(null, new ExprNode(b), new ExprNode(c), op2);
+                    node1.value = applyOperator(op2, b, c);
+                    if (isNaN(node1.value)) return null;
+                    const node2 = new ExprNode(null, new ExprNode(a), node1, op1);
+                    node2.value = applyOperator(op1, a, node1.value);
+                    if (isNaN(node2.value)) return null;
+                    const root = new ExprNode(null, node2, new ExprNode(d), op3);
+                    root.value = applyOperator(op3, node2.value, d);
+                    if (isNaN(root.value)) return null;
+                    return root;
+                } else if (shapeIdx === 2) {
+                    // a op1 ((b op2 c) op3 d)
+                    const node1 = new ExprNode(null, new ExprNode(b), new ExprNode(c), op2);
+                    node1.value = applyOperator(op2, b, c);
+                    if (isNaN(node1.value)) return null;
+                    const node2 = new ExprNode(null, node1, new ExprNode(d), op3);
+                    node2.value = applyOperator(op3, node1.value, d);
+                    if (isNaN(node2.value)) return null;
+                    const root = new ExprNode(null, new ExprNode(a), node2, op1);
+                    root.value = applyOperator(op1, a, node2.value);
+                    if (isNaN(root.value)) return null;
+                    return root;
+                } else if (shapeIdx === 3) {
+                    // a op1 (b op2 (c op3 d))
+                    const node1 = new ExprNode(null, new ExprNode(c), new ExprNode(d), op3);
+                    node1.value = applyOperator(op3, c, d);
+                    if (isNaN(node1.value)) return null;
+                    const node2 = new ExprNode(null, new ExprNode(b), node1, op2);
+                    node2.value = applyOperator(op2, b, node1.value);
+                    if (isNaN(node2.value)) return null;
+                    const root = new ExprNode(null, new ExprNode(a), node2, op1);
+                    root.value = applyOperator(op1, a, node2.value);
+                    if (isNaN(root.value)) return null;
+                    return root;
+                } else if (shapeIdx === 4) {
+                    // (a op1 b) op2 (c op3 d)
+                    const leftNode = new ExprNode(null, new ExprNode(a), new ExprNode(b), op1);
+                    leftNode.value = applyOperator(op1, a, b);
+                    if (isNaN(leftNode.value)) return null;
+                    const rightNode = new ExprNode(null, new ExprNode(c), new ExprNode(d), op3);
+                    rightNode.value = applyOperator(op3, c, d);
+                    if (isNaN(rightNode.value)) return null;
+                    const root = new ExprNode(null, leftNode, rightNode, op2);
+                    root.value = applyOperator(op2, leftNode.value, rightNode.value);
+                    if (isNaN(root.value)) return null;
+                    return root;
+                }
+            } catch(e) {
+                return null;
+            }
+            return null;
+        };
+        
+        // 遍历所有排列、运算符组合、形状
+        for (const perm of uniquePerms) {
+            for (const ops of opCombos) {
+                for (let shape = 0; shape < 5; shape++) {
+                    const root = buildTreeByShape(perm, ops, shape);
+                    if (root && !isNaN(root.value) && isFloatEqual(root.value, 24)) {
+                        let exprStr = root.toString();
+                        // 规范去空格并标准化显示
+                        exprStr = exprStr.replace(/\s+/g, ' ');
+                        solutionsSet.add(exprStr);
+                    }
+                }
+            }
+        }
+        
+        // 额外处理：由于除法可能出现交换律类似但表达式字符串不同，保留所有不同的有效表达式字符串，让提示更丰富
+        // 排序以便于展示
+        let solutions = Array.from(solutionsSet);
+        // 简单排序按长度
+        solutions.sort((a,b) => a.length - b.length);
+        return solutions;
+    }
+    
+    // ---------- 游戏状态管理 ----------
+    let currentNumbers = [];     // 存储当前四个个位数 (1-9，但是个位数包含0？题目通常1-9但也可以有0，但24点常用1-10，这里限定为1-9以增加挑战，但也可允许0?为了趣味，随机1-9)
+    let currentSolutions = [];   // 存储当前数字组合的所有解法字符串
+    
+    // 生成随机四个个位数 (1-9)
+    function generateRandomNumbers() {
+        const nums = [];
+        for (let i = 0; i < 4; i++) {
+            nums.push(Math.floor(Math.random() * 9) + 1); // 1~9
+        }
+        return nums;
+    }
+    
+    // 更新UI显示数字卡片
+    function updateNumbersUI() {
+        const container = document.getElementById('numbersArea');
+        container.innerHTML = '';
+        for (let i = 0; i < currentNumbers.length; i++) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const span = document.createElement('span');
+            span.innerText = currentNumbers[i];
+            card.appendChild(span);
+            container.appendChild(card);
+        }
+    }
+    
+    // 刷新当前谜题: 重新生成数字并清空提示，重置消息
+    function newGame() {
+        currentNumbers = generateRandomNumbers();
+        updateNumbersUI();
+        // 清空解法缓存
+        currentSolutions = [];
+        // 清空提示区域
+        const hintDiv = document.getElementById('hintContent');
+        hintDiv.innerHTML = '<div class="hint-placeholder">✨ 新题目已生成！点击上方按钮查看所有解法 ✨</div>';
+        // 清空输入框及消息
+        document.getElementById('userExpr').value = '';
+        document.getElementById('msgBox').innerHTML = '🎲 新回合！试试你的巧算能力吧！';
+        document.getElementById('msgBox').style.color = '#5e3a22';
+    }
+    
+    // 预计算当前数字的所有解法 (懒加载)
+    function ensureSolutions() {
+        if (currentSolutions.length === 0 && currentNumbers.length === 4) {
+            currentSolutions = findAllSolutions(currentNumbers);
+        }
+        return currentSolutions;
+    }
+    
+    // 展示所有提示 (将所有解法列在面板上)
+    function showAllHints() {
+        if (!currentNumbers.length) return;
+        const solutions = ensureSolutions();
+        const hintContainer = document.getElementById('hintContent');
+        if (solutions.length === 0) {
+            hintContainer.innerHTML = '<div class="solution-item">😔 当前数字组合无解！试试重新发牌吧~</div>';
+            return;
+        }
+        let html = `<div style="font-weight:bold; margin-bottom:6px;">✨ 共找到 ${solutions.length} 种解法 ✨</div>`;
+        for (let i = 0; i < Math.min(solutions.length, 40); i++) { // 限制展示最多40个，防止过多溢出
+            html += `<div class="solution-item">${solutions[i]}</div>`;
+        }
+        if (solutions.length > 40) {
+            html += `<div class="solution-item">...... 还有 ${solutions.length-40} 种解法，太强了！</div>`;
+        }
+        hintContainer.innerHTML = html;
+    }
+    
+    // 验证用户输入的表达式是否合法，并使用当前四个数字各恰好一次，计算结果为24
+    function validateExpression(expr) {
+        // 1. 提取数字以及校验数字集合
+        const inputNumbers = [];
+        const numberMatches = expr.match(/\d+/g);
+        if (!numberMatches || numberMatches.length !== 4) {
+            return { valid: false, msg: "❌ 必须使用且仅使用四个数字！请检查数字个数。" };
+        }
+        // 转换为数字并排序比较 (个位数)
+        const parsedNums = numberMatches.map(Number);
+        // 校验是否为个位数 (0-9 但是题目个位数，我们允许0-9，但生成的数字只有1-9，允许使用1-9即可)
+        for (let n of parsedNums) {
+            if (isNaN(n) || n < 0 || n > 9 || !Number.isInteger(n)) {
+                return { valid: false, msg: "❌ 数字必须是0-9的个位数！" };
+            }
+        }
+        // 比较当前游戏数字与表达式中数字出现的频率是否一致 (多对多)
+        const currentSorted = [...currentNumbers].sort((a,b)=>a-b);
+        const inputSorted = [...parsedNums].sort((a,b)=>a-b);
+        if (currentSorted.length !== inputSorted.length) return { valid: false, msg: "❌ 数字个数不正确！" };
+        for (let i = 0; i < currentSorted.length; i++) {
+            if (currentSorted[i] !== inputSorted[i]) {
+                return { valid: false, msg: "❌ 使用的数字与当前四张牌不符！必须使用给出的四个数字各一次。" };
+            }
+        }
+        
+        // 2. 安全计算表达式 (使用Function构造或者eval，但需要防止恶意，仅运算加减乘除括号数字)
+        // 由于我们已经过滤了只含数字和运算符以及括号、空格、加减乘除，白名单检测
+        const allowedRegex = /^[\d\s\+\-\*\/\(\)\.]+$/;
+        if (!allowedRegex.test(expr)) {
+            return { valid: false, msg: "⚠️ 表达式包含非法字符！仅支持数字、+-*/()和小数点。" };
+        }
+        // 额外校验避免连续运算符等问题，由eval处理抛异常
+        let result;
+        try {
+            // 使用 Function 替代 eval 稍安全，但为了简化，eval在可控范围；用 new Function
+            const calc = new Function('return (' + expr + ')');
+            result = calc();
+            if (typeof result !== 'number' || isNaN(result) || !isFinite(result)) {
+                return { valid: false, msg: "⚠️ 表达式无效（可能除零或语法错误）" };
+            }
+        } catch (e) {
+            return { valid: false, msg: "❌ 表达式语法错误，请检查括号与运算符。" };
+        }
+        
+        if (isFloatEqual(result, 24)) {
+            return { valid: true, msg: "🎉 完美！算式等于24，太厉害了！ 🎉" };
+        } else {
+            return { valid: false, msg: `🤔 算式计算结果为 ${result.toFixed(4)}，不是24，再试试看～` };
+        }
+    }
+    
+    // 验证按钮逻辑
+    function onCheck() {
+        const expr = document.getElementById('userExpr').value.trim();
+        if (expr === "") {
+            document.getElementById('msgBox').innerHTML = "📝 请输入算式，例如 (8-4)*(7-1)";
+            return;
+        }
+        const result = validateExpression(expr);
+        const msgDiv = document.getElementById('msgBox');
+        msgDiv.innerHTML = result.msg;
+        if (result.valid) {
+            msgDiv.style.color = "#1f6d2f";
+            msgDiv.style.background = "#e0f0e0";
+        } else {
+            msgDiv.style.color = "#a1221a";
+            msgDiv.style.background = "#ffe1de";
+        }
+        // 几秒后恢复背景
+        setTimeout(() => {
+            if (!result.valid && msgDiv.style.background === "#ffe1de") {
+                msgDiv.style.background = "#f6efdf";
+                msgDiv.style.color = "#5e3a22";
+            } else if (result.valid) {
+                // 保持一阵无所谓
+            }
+        }, 1500);
+    }
+    
+    // 初始化事件绑定
+    function bindEvents() {
+        document.getElementById('newGameBtn').addEventListener('click', () => {
+            newGame();
+        });
+        document.getElementById('showHintBtn').addEventListener('click', () => {
+            if (!currentNumbers.length) newGame();
+            showAllHints();
+        });
+        document.getElementById('checkBtn').addEventListener('click', onCheck);
+        // 支持回车键验证
+        const inputElem = document.getElementById('userExpr');
+        inputElem.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                onCheck();
+            }
+        });
+    }
+    
+    // 初始化游戏
+    function init() {
+        bindEvents();
+        currentNumbers = generateRandomNumbers();
+        updateNumbersUI();
+        currentSolutions = [];
+        const hintDiv = document.getElementById('hintContent');
+        hintDiv.innerHTML = '<div class="hint-placeholder">💡 点击「查看所有可能提示」显示算式列表</div>';
+        document.getElementById('msgBox').innerHTML = '✨ 输入算式，点击验证，看看是否等于24！';
+    }
+    
+    init();
+</script>
+</body>
+</html>
